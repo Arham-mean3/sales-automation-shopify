@@ -11,6 +11,7 @@ export default function SelectProductComp({
   products,
   setSalesProductsIds,
   salesProductsIds,
+  setSalesInfo
 }) {
   const deselectedOptions = useMemo(
     () =>
@@ -51,6 +52,8 @@ export default function SelectProductComp({
     [deselectedOptions, escapeSpecialRegExCharacters],
   );
 
+  
+
   const updateSelection = useCallback(
     (selected) => {
       const isProduct = options.some((option) => option.value === selected);
@@ -61,21 +64,23 @@ export default function SelectProductComp({
         
         // Check if the product is already selected
         const existingProduct = salesProductsIds.find(item => item.id === selected);
-
+  
         if (existingProduct) {
           // Product is selected, deselect it and its variants
           const newSelectedProducts = salesProductsIds.filter(
             item => item.id !== selected
           );
           setSalesProductsIds(newSelectedProducts);
+          setSalesInfo(newSelectedProducts)
         } else {
           // Add product and all its variants to selected products
           const newProduct = {
             id: selected,
             variants: allVariants,
           };
-
+  
           setSalesProductsIds([...salesProductsIds, newProduct]);
+          setSalesInfo([...salesProductsIds, newProduct])
         }
       } else {
         // Handle variant selection/deselection
@@ -83,9 +88,16 @@ export default function SelectProductComp({
         const updatedProducts = salesProductsIds.map(product => {
           // If product is selected, toggle its variant
           if (product.variants.includes(variantSelected)) {
+            const updatedVariants = product.variants.filter(variant => variant !== variantSelected);
+            
+            // If no variants are left, remove the product as well
+            if (updatedVariants.length === 0) {
+              return null; // Indicate to remove this product
+            }
+            
             return {
               ...product,
-              variants: product.variants.filter(variant => variant !== variantSelected),
+              variants: updatedVariants,
             };
           } else {
             // If variant is not selected, add it
@@ -94,15 +106,16 @@ export default function SelectProductComp({
               variants: [...product.variants, variantSelected],
             };
           }
-        });
-        
+        }).filter(Boolean); // Remove null entries
+  
         setSalesProductsIds(updatedProducts);
+        setSalesInfo(updatedProducts)
       }
       updateText("");
     },
     [options, salesProductsIds, updateText],
   );
-
+  
   const optionsMarkup =
     options.length > 0
       ? options.map((option) => {
@@ -166,3 +179,57 @@ export default function SelectProductComp({
     </div>
   );
 }
+
+
+
+// const updateSelection = useCallback(
+  //   (selected) => {
+  //     const isProduct = options.some((option) => option.value === selected);
+      
+  //     if (isProduct) {
+  //       const product = options.find((option) => option.value === selected);
+  //       const allVariants = product.variants.map(variant => variant.value);
+        
+  //       // Check if the product is already selected
+  //       const existingProduct = salesProductsIds.find(item => item.id === selected);
+
+  //       if (existingProduct) {
+  //         // Product is selected, deselect it and its variants
+  //         const newSelectedProducts = salesProductsIds.filter(
+  //           item => item.id !== selected
+  //         );
+  //         setSalesProductsIds(newSelectedProducts);
+  //       } else {
+  //         // Add product and all its variants to selected products
+  //         const newProduct = {
+  //           id: selected,
+  //           variants: allVariants,
+  //         };
+
+  //         setSalesProductsIds([...salesProductsIds, newProduct]);
+  //       }
+  //     } else {
+  //       // Handle variant selection/deselection
+  //       const variantSelected = selected;
+  //       const updatedProducts = salesProductsIds.map(product => {
+  //         // If product is selected, toggle its variant
+  //         if (product.variants.includes(variantSelected)) {
+  //           return {
+  //             ...product,
+  //             variants: product.variants.filter(variant => variant !== variantSelected),
+  //           };
+  //         } else {
+  //           // If variant is not selected, add it
+  //           return {
+  //             ...product,
+  //             variants: [...product.variants, variantSelected],
+  //           };
+  //         }
+  //       });
+        
+  //       setSalesProductsIds(updatedProducts);
+  //     }
+  //     updateText("");
+  //   },
+  //   [options, salesProductsIds, updateText],
+  // );

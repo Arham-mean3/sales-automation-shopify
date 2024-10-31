@@ -44,10 +44,10 @@ export default function DateAndTimePicker({
   // Handle Date Change for End Date
   const handleEndDateSelection = ({ end: newSelectedDate }) => {
     const localDate = new Date(newSelectedDate);
-    if (localDate < sDate) {
-      alert("End date cannot be before the start date.");
-      return;
-    }
+    // if (localDate < sDate) {
+    //   alert("End date cannot be before the start date.");
+    //   return;
+    // }
     setEdate(localDate);
   };
 
@@ -90,7 +90,7 @@ export default function DateAndTimePicker({
             {/* Use TimeSelector for Start Time */}
             <Box minWidth="240px">
               <TimeSelector
-                label={"Select Start Time"}
+                label={stime}
                 selectedTime={stime}
                 setSelectedTime={setStime}
               />
@@ -137,7 +137,7 @@ export default function DateAndTimePicker({
               {/* Use TimeSelector for End Time */}
               <Box minWidth="240px">
                 <TimeSelector
-                  label={"Select End Time"}
+                  label={etime}
                   selectedTime={etime}
                   setSelectedTime={setEtime}
                 />

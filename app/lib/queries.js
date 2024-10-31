@@ -1,6 +1,6 @@
 export const getProductsQuery = `
 query productInfo {
-  products(first: 10) {
+  products(first: 10, reverse: true) {
     edges {
       node {
         title
@@ -31,7 +31,7 @@ query productInfo {
         handle
         status
         createdAt
-        variants(first: 10) {
+        variants(first: 60) {
           edges {
             node {
               id

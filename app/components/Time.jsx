@@ -1,44 +1,64 @@
-import React from 'react';
-import { Listbox, Combobox, Icon } from '@shopify/polaris';
-import { CalendarTimeIcon } from '@shopify/polaris-icons';
-import { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from "react";
+import { Listbox, Combobox, Icon } from "@shopify/polaris";
+import { CalendarTimeIcon } from "@shopify/polaris-icons";
 
 export default function TimeSelector({ selectedTime, setSelectedTime, label }) {
-// Generate time slots with 30-minute intervals
-const generateTimeSlots = useCallback(() => {
-  const times = [];
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      const formattedHour = hour % 12 === 0 ? 12 : hour % 12; // Convert to 12-hour format
-      const formattedMinute = String(minute).padStart(2, '0');
-      const amPm = hour < 12 ? 'AM' : 'PM';
-      const timeLabel = `${formattedHour}:${formattedMinute} ${amPm}`;
-      times.push({ value: `${hour}:${formattedMinute}`, label: timeLabel });
+  // Generate time slots with 30-minute intervals
+
+  // const generateTimeSlots = useCallback(() => {
+  //   const times = [];
+  //   for (let hour = 0; hour < 24; hour++) {
+  //     for (let minute = 0; minute < 60; minute += 30) {
+  //       const formattedHour = hour % 12 === 0 ? 12 : hour % 12; // Convert to 12-hour format
+  //       const formattedMinute = String(minute).padStart(2, "0");
+  //       const amPm = hour < 12 ? "AM" : "PM";
+  //       const label = ${formattedHour}:${formattedMinute} ${amPm};
+  //       const value = ${String(hour).padStart(2, "0")}:${formattedMinute}; // 24-hour format
+  //       times.push({ value, label });
+  //     }
+  //   }
+  //   return times;
+  // }, []);
+
+  // Generate time slots with 1-minute intervals
+
+  const generateTimeSlots = useCallback(() => {
+    const times = [];
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute++) {
+        const formattedHour = hour % 12 === 0 ? 12 : hour % 12; // Convert to 12-hour format
+        const formattedMinute = String(minute).padStart(2, "0");
+        const amPm = hour < 12 ? "AM" : "PM";
+        const label = `${formattedHour}:${formattedMinute} ${amPm}`;
+        const value = `${String(hour).padStart(2, "0")}:${formattedMinute}`; // 24-hour format
+        times.push({ value, label });
+      }
     }
-  }
-  return times;
-}, []);
+    return times;
+  }, []);
 
-const deselectedOptions = useMemo(() => generateTimeSlots(), [generateTimeSlots]);
+  const deselectedOptions = useMemo(
+    () => generateTimeSlots(),
+    [generateTimeSlots],
+  );
 
-
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [options, setOptions] = useState(deselectedOptions);
 
   const escapeSpecialRegExCharacters = useCallback(
-    (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
     [],
   );
 
   const updateText = useCallback(
     (value) => {
       setInputValue(value);
-      if (value === '') {
+      if (value === "") {
         setOptions(deselectedOptions);
         return;
       }
 
-      const filterRegex = new RegExp(escapeSpecialRegExCharacters(value), 'i');
+      const filterRegex = new RegExp(escapeSpecialRegExCharacters(value), "i");
       const resultOptions = deselectedOptions.filter((option) =>
         option.label.match(filterRegex),
       );
@@ -49,9 +69,9 @@ const deselectedOptions = useMemo(() => generateTimeSlots(), [generateTimeSlots]
 
   const updateSelection = useCallback(
     (selected) => {
-      setSelectedTime(selected);
+      setSelectedTime(selected); // Store 24-hour format value
       const matchedOption = options.find((option) => option.value === selected);
-      setInputValue((matchedOption && matchedOption.label) || '');
+      setInputValue((matchedOption && matchedOption.label) || ""); // Display 12-hour format label
     },
     [options, setSelectedTime],
   );
@@ -74,7 +94,7 @@ const deselectedOptions = useMemo(() => generateTimeSlots(), [generateTimeSlots]
       : null;
 
   return (
-    <div style={{ height: '10px' }}>
+    <div style={{ height: "10px" }}>
       <Combobox
         activator={
           <Combobox.TextField
