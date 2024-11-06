@@ -33,3 +33,29 @@ export const dateToCron = (date, time) => {
 
   return `${minutes} ${hours} ${dayOfMonth} ${month} ${dayOfWeek}`;
 };
+
+export const formatDateTime = (dateString, timeString) => {
+  const dateTime = new Date(`${dateString.split("T")[0]}T${timeString}`);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true,
+  }).format(dateTime);
+};
+
+export const calculateTimeEstimation = (products) => {
+  const timePerItem = 0.85; // Time taken per product or variant in seconds
+
+  return products.reduce((totalTime, product) => {
+    // Time for the product itself
+    const productTime = timePerItem;
+
+    // Time for each variant
+    const variantsTime = product.variants.length * timePerItem;
+
+    // Total time for this product and its variants
+    return Math.floor(totalTime + productTime + variantsTime);
+  }, 0);
+};

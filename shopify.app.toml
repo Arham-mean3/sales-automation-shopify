@@ -3,7 +3,7 @@
 client_id = "8c343e825a810addc543e718aa692715"
 name = "arham-test-app"
 handle = "arham-test-app"
-application_url = "https://democrat-guestbook-blade-pop.trycloudflare.com"
+application_url = "https://brighton-charity-routines-authority.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://democrat-guestbook-blade-pop.trycloudflare.com/auth/callback",
-  "https://democrat-guestbook-blade-pop.trycloudflare.com/auth/shopify/callback",
-  "https://democrat-guestbook-blade-pop.trycloudflare.com/api/auth/callback"
+  "https://brighton-charity-routines-authority.trycloudflare.com/auth/callback",
+  "https://brighton-charity-routines-authority.trycloudflare.com/auth/shopify/callback",
+  "https://brighton-charity-routines-authority.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

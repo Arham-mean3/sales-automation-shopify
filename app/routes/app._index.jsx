@@ -1,39 +1,23 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import cron from "node-cron";
-import {
-  Page,
-  Layout,
-  Text,
-  Card,
-  DataTable,
-  Modal,
-  Button,
-  Form,
-  TextField,
-  FormLayout,
-  Select,
-  Banner,
-  Toast,
-  Frame,
-} from "@shopify/polaris";
+import { Page, Layout, Text, Button, Toast, Frame } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
-import SelectProductComp from "../components/MultiCombobox";
-import DateAndTimePicker from "../components/DateAndTimePicker";
 import {
+  getAllCollections,
   getAllProductsQuery,
   getProductsQuery,
   updateProductVariantsPrice,
 } from "../lib/queries";
 import { addProduct, updateProductVariants } from "../lib/action";
 import { dateToCron, parseDate } from "../lib/utils";
-import {
-  calculateEstimatedTime,
-  options,
-  SalesTypeOption,
-} from "../lib/options";
+import { styles } from "../styles";
+import IndexTableWithViewsSearch from "../components/SalesAllList";
+import SalesModal from "../components/SalesModal";
+import { SelectContext } from "../context/Select-Context";
+import prisma from "../db.server";
 
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
@@ -48,12 +32,34 @@ export const loader = async ({ request }) => {
     ${getAllProductsQuery}`,
   );
 
+  const collectionResponse = await admin.graphql(
+    `#graphql
+    ${getAllCollections}
+    `,
+  );
+
+  const allSales = await prisma.sale.findMany({
+    include: {
+      products: {
+        include: {
+          variants: true, // Include the variants associated with each product
+        },
+      },
+    },
+  });
+
+  const sessions = await prisma.session.findMany();
+
   const data = await response.json();
   const productsData = await newResponse.json();
+  const collections = await collectionResponse.json();
 
   return json({
     products: data.data.products.edges,
     allProducts: productsData.data.products.edges,
+    allCollection: collections.data.collections.edges,
+    allSales: JSON.stringify(allSales),
+    sessions: sessions,
   });
 };
 
@@ -115,32 +121,48 @@ export const action = async ({ request }) => {
               try {
                 let originalPrice;
                 let newPrice;
-                if (salesType === "PERCENTAGE") {
-                  const variantPriceQuery = await admin.graphql(
-                    `#graphql
+
+                const variantPriceQuery = await admin.graphql(
+                  `#graphql
                   query getVariantPrice($id: ID!) {
                     productVariant(id: $id) {
                       price
+                      compareAtPrice
                     }
                   }
                 `,
-                    { variables: { id: variantId } },
-                  );
-                  const variantPriceResponse = await variantPriceQuery.json();
-                  originalPrice = parseFloat(
-                    variantPriceResponse?.data?.productVariant?.price,
-                  );
+                  { variables: { id: variantId } },
+                );
 
-                  console.log("Original Price", originalPrice);
+                const variantPriceResponse = await variantPriceQuery.json();
+                let price = parseFloat(
+                  variantPriceResponse?.data?.productVariant?.price,
+                );
+                let compareAtPrice = parseFloat(
+                  variantPriceResponse?.data?.productVariant?.compareAtPrice,
+                );
+
+                // If compareAtPrice exists, use it as the current price and set compareAtPrice to null
+                if (compareAtPrice) {
+                  originalPrice = compareAtPrice;
+                  compareAtPrice = null;
+                } else {
+                  originalPrice = price;
+                }
+
+                console.log("Original Price (before discount)", originalPrice);
+
+                if (salesType === "PERCENTAGE") {
                   const discountPercentage = parseFloat(salesValue) / 100;
                   newPrice = originalPrice * (1 - discountPercentage);
 
-                  console.log("New Price", newPrice);
+                  console.log("Discounted New Price", newPrice);
                 }
+
                 const productSaleUpdate = await admin.graphql(
                   `#graphql
-                ${updateProductVariantsPrice}
-              `,
+                  ${updateProductVariantsPrice}
+                `,
                   {
                     variables: {
                       productId: productId,
@@ -154,13 +176,16 @@ export const action = async ({ request }) => {
                     },
                   },
                 );
+
                 const salesUpdate = await productSaleUpdate.json();
                 console.log("SALE UPDATED: ", salesUpdate);
+
                 results.push({
                   productId,
                   variantId,
                   success: true,
                   salesUpdate,
+                  sale: true,
                 });
               } catch (error) {
                 console.log("Error processing variant ID:", variantId, error);
@@ -218,6 +243,7 @@ export const action = async ({ request }) => {
                   variantId,
                   success: true,
                   revertUpdateResponse,
+                  sale: false,
                 });
               } catch (error) {
                 console.log("Error reverting variant ID:", variantId, error);
@@ -250,78 +276,151 @@ export const action = async ({ request }) => {
         console.log("NEW Error", error);
         return json({ errors: error, salesCreated: false }, { status: 400 });
       }
+    case "CREATE":
+      try {
+        const {
+          products,
+          salesType,
+          saleTags,
+          salesTitle,
+          salesValue,
+          sDate,
+          eDate,
+          etime,
+          stime,
+        } = formData;
+        const productsData = JSON.parse(products);
+
+        console.log(
+          "------------------------------",
+          salesTitle,
+          saleTags,
+          productsData,
+          salesValue,
+          sDate,
+          eDate,
+          etime,
+          stime,
+          salesType,
+        );
+        // Prepare the sale data for database insertion
+        const newSale = await prisma.sale.create({
+          data: {
+            salesType: salesType,
+            saleTags: saleTags,
+            salesTitle: salesTitle,
+            salesValue: salesValue,
+            sDate: new Date(sDate), // Ensure sDate is a Date object
+            eDate: new Date(eDate), // Ensure eDate is a Date object
+            stime: stime,
+            etime: etime,
+            status: "Active",
+            products: {
+              create: productsData.map((product) => ({
+                pId: product.id,
+                variants: {
+                  create: product.variants.map((variantId) => ({
+                    variantId: variantId,
+                  })),
+                },
+              })),
+            },
+          },
+        });
+
+        console.log(newSale);
+        return json(
+          { message: "Sales Created Successfully!", salesCreated: true },
+          { status: 201 },
+        );
+      } catch (error) {
+        console.log("NEW Error", error);
+        return json({ errors: error, salesCreated: false }, { status: 400 });
+      }
+    case "DELETE":
+      try {
+        const { saleId } = formData;
+        const deletedSale = await prisma.sale.delete({
+          where: {
+            id: saleId, // The unique ID of the sale to delete
+          },
+        });
+        console.log("Deleted sale:", deletedSale);
+        return json({ status: 200 });
+      } catch (error) {
+        return json(
+          { error: "Error while deleting the sales" },
+          { status: 400 },
+        );
+      }
+    case "CHANGE_STATUS_TEXT":
+      try {
+        const { id } = formData;
+
+        // Fetch the current sale to get the current status
+        const currentSale = await prisma.sale.findUnique({
+          where: { id: id },
+          select: { status: true }, // Select only the status field
+        });
+
+        if (!currentSale) {
+          return json(
+            { message: "Sale not found", statusChanged: false },
+            { status: 404 },
+          );
+        }
+
+        // Toggle the status text
+        const newStatus =
+          currentSale.status === "Active"
+            ? "Disabled"
+            : currentSale.status === "Disabled" && "Active";
+
+        // Update the sale with the new status
+        const updateSaleStatustext = await prisma.sale.update({
+          where: { id: id },
+          data: { status: newStatus },
+        });
+        console.log("Updated Value", updateSaleStatustext);
+        return json(
+          { message: "Status Text Changed", statusChanged: true },
+          { status: 201 },
+        );
+      } catch (error) {
+        console.error("Error updating status text:", error);
+        return json(
+          {
+            message: "There is an error while updating the status text",
+            statusChanged: false,
+          },
+          { status: 400 },
+        );
+      }
     default:
       break;
   }
 };
 
-//   const formData = Object.fromEntries(form);
-
-//   try {
-//     const response = await admin.graphql(
-//       `#graphql
-//       mutation populateProduct($input: ProductInput!) {
-//         productCreate(input: $input) {
-//           product {
-//             id
-//             title
-//             handle
-//             status
-//             variants(first: 10) {
-//               edges {
-//                 node {
-//                   id
-//                   price
-//                   barcode
-//                   createdAt
-//                 }
-//               }
-//             }
-//           }
-//         }
-//       }`,
-//       {
-//         variables: {
-//           input: {
-//             id: Math.floor(Math.random() * 1000).toString(),
-//             title: formData.title,
-//             handle: formData.handle,
-//             status: formData.status, // Corrected to use 'status' instead of duplicating 'handle'
-//             price: formData.price,
-//             barcode: formData.barcode,
-//             createdAt: new Date().toISOString()
-//           },
-//         },
-//       },
-//     );
-
-//     const responseJson = await response.json();
-//     return json(responseJson.data.productCreate.product); // Return the created product data
-//   } catch (error) {
-//     console.error("Error creating product:", error);
-//     throw new Response("Failed to create product", { status: 500 });
-//   }
-// };
-
 export default function Index() {
-  const [active, setActive] = useState(false);
-  const handleChange = useCallback(() => setActive(!active), [active]);
-
-  const { products, allProducts } = useLoaderData();
+  const { allProducts, allCollection, allSales } = useLoaderData();
+  const AllSales = JSON.parse(allSales);
   const fetcher = useFetcher();
 
-  const [title, setTitle] = useState("");
-  const [handle, setHandle] = useState("");
-  const [price, setPrice] = useState("");
-  const [barcode, setBarcode] = useState("");
-  const [salesInfo, setSalesInfo] = useState([]);
+  const { products, setCollection, setProducts, setSelectedCollection } =
+    useContext(SelectContext);
+
   const [salesType, setSalesType] = useState("PERCENTAGE");
   const [salesValue, setSalesValue] = useState("");
-  const [selected, setSelected] = useState("ACTIVE");
-  const [showBanner, setShowBanner] = useState(false);
   const [showToast, setShowToast] = useState(false);
-  const [salesProductsIds, setSalesProductsIds] = useState([]);
+  const [toastMessage, setToastMessage] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [salesCollectionIds, setSalesCollectionIds] = useState([]);
+
   // Getting Data from the separate Components
+
+  //----- Sales Title ---- Sales Tag
+  const [salesTitle, setSaleTitle] = useState("");
+  const [saleTags, setSaleTags] = useState("");
 
   //----- Time ---- Data
   const [stime, setStime] = useState("12:00");
@@ -332,10 +431,10 @@ export default function Index() {
   const [eDate, setEdate] = useState(
     new Date(new Date().setDate(new Date().getDate() + 2)),
   );
-
   //----- Date ---- Date
 
-  const handleSelectChange = useCallback((value) => setSelected(value), []);
+  // error----- setError
+  const [error, setError] = useState(false);
 
   // Handle Sales Types Function
   const handleSelectSalesTypeChanges = useCallback(
@@ -343,206 +442,143 @@ export default function Index() {
     [],
   );
 
-  const rows = products.map(({ node }) => {
-    const variant = node.variants.edges[0]?.node; // Get the first variant
-    return [
-      node.title, // Product title
-      node.handle, // Product handle
-      node.status, // Product status
-      `$ ${variant.price}` || "$0.00", // Variant price (defaulting to "$0.00" if not available)
-      variant.barcode || "N/A", // Barcode (defaulting to "N/A" if not available)
-      variant.createdAt, // Variant created at date
-    ];
-  });
+  const validateSaleInputs = () => {
+    // Check if any of the required fields are missing
+    if (!salesTitle) {
+      setToastMessage("Please add a sales title.");
+      setError(true);
+      setShowToast(true);
+      return false;
+    }
 
-  const activator = <Button onClick={handleChange}>Create a Product</Button>;
+    if (!salesValue) {
+      setToastMessage("Please enter a sales value.");
+      setError(true);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const formData = {
-      title: title,
-      handle: handle,
-      status: selected,
-      barcode: barcode,
-      price: price,
-      actionKey: "CREATE_PRODUCT",
-    };
+      setShowToast(true);
+      return false;
+    }
 
+    if (products.length === 0) {
+      setToastMessage("Kindly add products in order to apply the sale.");
+      setError(true);
+
+      setShowToast(true);
+      return false;
+    }
+
+    if (!stime) {
+      setToastMessage("Please set a start time for the sale.");
+      setError(true);
+
+      setShowToast(true);
+      return false;
+    }
+
+    if (!etime) {
+      setToastMessage("Please set an end time for the sale.");
+      setError(true);
+      setShowToast(true);
+      return false;
+    }
+
+    // All checks passed
+    return true;
+  };
+
+  const createSale = async () => {
+    // Check for required fields
+    if (!validateSaleInputs()) {
+      return;
+    } else {
+      const formData = {
+        actionKey: "CREATE",
+        salesTitle,
+        salesType,
+        salesValue,
+        saleTags,
+        products: JSON.stringify(products),
+        eDate,
+        sDate,
+        etime,
+        stime,
+      };
+
+      try {
+        // Submit the form data using the existing fetcher
+        await fetcher.submit(formData, { method: "POST" });
+
+        setSaleTitle("");
+        setSaleTags("");
+        setSalesType("PERCENTAGE");
+        setProducts([]);
+        setCollection([]);
+        setSelectedCollection([]);
+        setSalesValue("");
+        setSdate(new Date());
+        setEdate(new Date(new Date().setDate(new Date().getDate() + 2)));
+        setStime("12:00");
+        setEtime("12:00");
+        setShowModal(false);
+        setToastMessage("Successfully Created Sales");
+        setShowToast(true);
+        setError(false);
+      } catch (error) {
+        console.log("There is an error encountered", error);
+      }
+    }
+  };
+
+  const deleteSale = async () => {
     try {
-      // Submit the form data using the existing fetcher
+      const formData = {
+        actionKey: "DELETE",
+        saleId: "624d1aaa-c988-4508-b786-42baa0ed9535",
+      };
       await fetcher.submit(formData, { method: "POST" });
-
-      setTitle("");
-      setBarcode("");
-      setHandle("");
-      setPrice("");
     } catch (error) {
       console.log(error);
     }
   };
 
-  const totalVariantsCount = salesProductsIds.reduce((total, product) => {
-    return total + product.variants.length;
-  }, 0);
-
-  const createSale = async () => {
-    console.log("Create Sales func Called!");
-
-    // Check for required fields
-    if (!salesValue || salesProductsIds.length === 0 || !stime || !etime) {
-      setShowBanner(true); // Show the banner
-      return; // Exit the function
-    }
-    
-    const formData = {
-      actionKey: "CREATE_SALES",
-      salesType,
-      salesValue,
-      products: JSON.stringify(salesProductsIds),
-      eDate,
-      sDate,
-      etime,
-      stime,
-    };
+  const handleStatus = async (id) => {
     try {
-      // Submit the form data using the existing fetcher
+      const formData = { actionKey: "CHANGE_STATUS_TEXT", id };
       await fetcher.submit(formData, { method: "POST" });
-
-      setSalesProductsIds([]);
-      setSalesType("PERCENTAGE");
-      setSalesValue("");
-      setSdate(new Date());
-      setEdate(new Date(new Date().setDate(new Date().getDate() + 2)));
-      setStime("12:00");
-      setEtime("12:00");
-      setShowBanner(false);
     } catch (error) {
-      console.log("There is an error encountered", error);
+      console.error(error);
     }
   };
+  useEffect(() => {
+    setCollection(allCollection);
+  }, [allCollection]);
 
-  const time = fetcher.data?.timeTaken;
+  // useEffect(() => {
+  //   console.log("All Sales", AllSales);
+  //   // console.log("Sessions", sessions)
+  // }, [AllSales]);
 
-  const sales = fetcher.data?.salesJobs;
-
-  console.log("Sales Data", sales);
+  const res = fetcher.data?.statusChanged;
 
   useEffect(() => {
-    if (fetcher.data?.salesCreated) {
+    if (res) {
       setShowToast(true);
-      setSalesInfo([]);
+      setError(false);
+      setToastMessage("Status updated successfully!");
     }
-  }, [fetcher.data?.salesCreated]);   
+  }, [res]);
 
   return (
     <Frame>
       <Page>
         <TitleBar title="Remix app template"></TitleBar>
         <Layout>
-          {/* Heading */}
-          <Layout.Section>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                width: "100%",
-              }}
-            >
-              <Text as="h2">
-                All Products
-                {/* {JSON.stringify(product)} */}
-              </Text>
-              {activator}
-            </div>
-          </Layout.Section>
-          {/* Table */}
-          <Layout.Section>
-            <Card>
-              <DataTable
-                columnContentTypes={[
-                  "text",
-                  "text",
-                  "text",
-                  "text",
-                  "text",
-                  "text",
-                ]}
-                headings={[
-                  "Title",
-                  "Handle",
-                  "Status",
-                  "price",
-                  "barcode",
-                  "createdAt",
-                ]}
-                rows={rows}
-              />
-            </Card>
-
-            <Modal
-              // activator={activator}
-              open={active}
-              onClose={handleChange}
-              title="Create a Products!"
-              primaryAction={{
-                content: "Confirm",
-                onAction: handleSubmit,
-              }}
-              secondaryActions={[
-                {
-                  content: "Cancel",
-                  onAction: handleChange,
-                },
-              ]}
-            >
-              <Modal.Section>
-                <Form onSubmit={handleSubmit}>
-                  <FormLayout>
-                    <TextField
-                      type="text"
-                      label="Product Title"
-                      value={title}
-                      onChange={setTitle}
-                    />
-                    <TextField
-                      type="text"
-                      label="Product Handle"
-                      value={handle}
-                      onChange={setHandle}
-                    />
-                    <Select
-                      label="Status"
-                      options={options}
-                      onChange={handleSelectChange}
-                      value={selected}
-                    />
-                    <TextField
-                      type="text"
-                      label="Product Price"
-                      value={price}
-                      onChange={setPrice}
-                    />
-                    <TextField
-                      type="text"
-                      label="Product Barcode"
-                      value={barcode}
-                      onChange={setBarcode}
-                    />
-                  </FormLayout>
-                </Form>
-              </Modal.Section>
-            </Modal>
-          </Layout.Section>
           {/* Toast Container */}
           <Layout.Section>
             {showToast ? (
               <Toast
-                content={
-                  fetcher.data?.salesCreated
-                    ? `Sales Created Successfully! in ${time}`
-                    : "There is an error!"
-                }
+                content={toastMessage}
+                error={error}
                 onDismiss={() => setShowToast(false)}
               />
             ) : null}
@@ -550,159 +586,65 @@ export default function Index() {
 
           {/* Sales Provider */}
           <Layout.Section>
-            <div style={{ position: "relative" }}>
-              <div
-                style={{
-                  marginTop: 20,
-                  marginBottom: 20,
-                  width: "300px",
-                  position: "absolute",
-                  right: -200,
-                  bottom: 0,
-                  zIndex: 999,
-                }}
-              >
-                {showBanner && (
-                  <Banner
-                    title="Fill the following fields"
-                    onDismiss={() => setShowBanner(false)}
-                    tone={
-                      !salesValue ||
-                      salesProductsIds.length === 0 ||
-                      !stime ||
-                      !etime
-                        ? "warning"
-                        : "success"
-                    }
-                  >
-                    <p>
-                      {!salesValue && salesProductsIds.length === 0
-                        ? "There is no Sale Value added and no products are selected!"
-                        : !salesValue
-                          ? "There is no Sale Value added!"
-                          : salesProductsIds.length === 0
-                            ? "No products are selected for applying sales!"
-                            : "Create Sales"}
-                    </p>
-                  </Banner>
-                )}
-              </div>
-              <div
-                style={{
-                  width: "300px",
-                  margin: "auto",
-                  position: "absolute",
-                  right: -200,
-                  zIndex: 999,
-                }}
-              >
-                <Banner title="Time Estimation">
-                  <p>
-                    {`${salesInfo.length} products with a total of ${totalVariantsCount} variants will require approximately ${calculateEstimatedTime(salesInfo)} to process.`}
-                  </p>
-                </Banner>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: "#fff",
-                    padding: 20,
-                    borderRadius: 10,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
-                    <Text variant="heading3xl" as="h2">
-                      Apply Sales
+            <div>
+              {/* Modal for displaying the content */}
+              <SalesModal
+                showModal={showModal}
+                salesType={salesType}
+                salesValue={salesValue}
+                etime={etime}
+                stime={stime}
+                products={allProducts}
+                sDate={sDate}
+                eDate={eDate}
+                salesTitle={salesTitle}
+                saleTags={saleTags}
+                collections={allCollection}
+                salesCollectionIds={salesCollectionIds}
+                setStime={setStime}
+                setEtime={setEtime}
+                createSale={createSale}
+                handleSelectSalesTypeChanges={handleSelectSalesTypeChanges}
+                setShowModal={setShowModal}
+                setSalesValue={setSalesValue}
+                setSdate={setSdate}
+                setEdate={setEdate}
+                setSaleTags={setSaleTags}
+                setSaleTitle={setSaleTitle}
+                setSalesCollectionIds={setSalesCollectionIds}
+              />
+              {/* ALL SALES LIST */}
+
+              <div style={styles.tableContainer}>
+                {/* <SalesList /> */}
+                <div style={styles.table}>
+                  {/* SALES HEADING AND BUTTON CONTAINER */}
+                  <div style={styles.salesContainer}>
+                    <Text variant="headingXl" as="h1">
+                      All Sales Listed
                     </Text>
-                    <Button onClick={createSale} variant={"primary"}>
-                      Create a Sale!
+
+                    <Button onClick={() => setShowModal(true)} primary>
+                      Create Sales
                     </Button>
+
+                    {/* <Button onClick={() => deleteSale()}>Delete Sales</Button> */}
                   </div>
-
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: "16px",
-                    }}
-                  >
-                    <Select
-                      label="Sales Type"
-                      options={SalesTypeOption}
-                      onChange={handleSelectSalesTypeChanges}
-                      value={salesType}
-                    />
-
-                    <TextField
-                      type={
-                        salesType === "FIXED-AMOUNT"
-                          ? "number"
-                          : salesType === "PERCENTAGE" && "integer"
-                      }
-                      label={`Sales values`}
-                      value={salesValue}
-                      onChange={(value) => {
-                        const intValue = parseInt(value, 10);
-
-                        if (
-                          value === "" ||
-                          (Number.isInteger(intValue) && intValue >= 1)
-                        ) {
-                          setSalesValue(value);
-                        }
-                      }}
-                      prefix={
-                        salesType === "FIXED-AMOUNT"
-                          ? "$"
-                          : salesType === "PERCENTAGE" && "%"
-                      }
-                    />
-                  </div>
-
-                  <div
-                    style={{
-                      marginTop: 20,
-                      marginBottom: 20,
-                    }}
-                  >
-                    <DateAndTimePicker
-                      eDate={eDate}
-                      sDate={sDate}
-                      stime={stime}
-                      etime={etime}
-                      setStime={setStime}
-                      setEtime={setEtime}
-                      setSdate={setSdate}
-                      setEdate={setEdate}
-                    />
-                  </div>
-
-                  <div
-                    style={{
-                      marginTop: 20,
-                      marginBottom: 20,
-                    }}
-                  >
-                    <SelectProductComp
-                      products={allProducts}
-                      setSalesProductsIds={setSalesProductsIds}
-                      salesProductsIds={salesProductsIds}
-                      setSalesInfo={setSalesInfo}
-                    />
-                  </div>
+                  <IndexTableWithViewsSearch
+                    data={AllSales}
+                    salesHandler={handleStatus}
+                  />
+                </div>
+                <div style={styles.info}>
+                  <strong>
+                    Boost Sales Effortlessly with Automated Discounts!
+                  </strong>
+                  <p>
+                    Our Shopify Sales Automation app makes it simple to manage
+                    and activate sales across your store. Apply discounts to
+                    individual products or entire collections with just a few
+                    clicks.
+                  </p>
                 </div>
               </div>
             </div>
@@ -712,103 +654,3 @@ export default function Index() {
     </Frame>
   );
 }
-
-// const response = await admin.graphql(
-//   `#graphql
-//     ${addProductsQuery}`,
-//   {
-//     variables: {
-//       input: {
-//         title: formData.title,
-//         handle: formData.handle,
-//         status: formData.status,
-//       },
-//     },
-//   },
-// );
-
-// const responseJson = await response.json();
-
-// // Check for user errors
-// const userErrors = responseJson.data.productCreate.userErrors;
-// if (userErrors.length > 0) {
-//   return json({ errors: userErrors }, { status: 400 });
-// }
-
-// const product = responseJson.data.productCreate.product;
-// const variantId = product.variants.edges[0].node.id;
-
-// if (product.id) {
-// }
-
-// const variantResponse = await admin.graphql(
-//   `#graphql
-//     ${addProductVariantsQuery}`,
-//   {
-//     variables: {
-//       productId: product.id,
-//       variants: [
-//         {
-//           id: variantId,
-//           price: formData.price,
-//           barcode: formData.barcode,
-//         },
-//       ],
-//     },
-//   },
-// );
-
-// const variantResponseJson = await variantResponse.json();
-
-// // Check for user errors in variant update
-// const variantUserErrors =
-//   variantResponseJson.data.productVariantsBulkUpdate.userErrors;
-// if (variantUserErrors.length > 0) {
-//   return json({ errors: variantUserErrors }, { status: 400 });
-// }
-
-// return json({
-//   product: product,
-//   variant:
-//     variantResponseJson.data.productVariantsBulkUpdate.productVariants,
-// });
-
-// ProductsID: {JSON.stringify(salesProductsIds)}
-
-{
-  /* <Card>
-            {/* <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                flexWrap: "wrap",
-              }}
-            > */
-}
-{
-  /* <div></div> */
-}
-{
-  /* <div>
-                StartTime: {JSON.stringify(stime)} ---- EndTime:{" "}
-                {JSON.stringify(etime)}-
-              </div>
-              <div>
-                StartDate:
-                {JSON.stringify(formatDateToDDMMYYYY(sDate))} ---- EndDate:
-                {JSON.stringify(formatDateToDDMMYYYY(eDate))}
-              </div> */
-}
-{
-  /* <div>
-                <div>{JSON.stringify(salesProductsIds)}</div>
-                <div>{JSON.stringify(salesType)}</div>
-              </div> */
-}
-{
-  /* </div> */
-}
-{
-  /* </Card>  */
-}
-//   const form = await request.formData();

@@ -30,3 +30,34 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 }
+
+model Sale {
+  id          String      @id @default(uuid())
+  salesType   String
+  saleTags    String
+  salesTitle  String
+  salesValue  String
+  sDate       DateTime
+  eDate       DateTime
+  stime       String
+  etime       String
+  products    Product[]   @relation("SalesProducts") // Many-to-many relation with Product
+  status      String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Product {
+  id        String     @id @default(uuid())
+  pId       String?    
+  variants  Variant[]  @relation("ProductVariants") // One-to-many relation with Variant
+  sales     Sale[]     @relation("SalesProducts") // Many-to-many relation with Sale
+}
+
+model Variant {
+  id         String   @id @default(uuid())
+  variantId  String   
+  productId  String   
+  product    Product  @relation("ProductVariants", fields: [productId], references: [id]) // Relation to Product
+}
+

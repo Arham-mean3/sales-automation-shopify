@@ -6,7 +6,6 @@ import {
   Popover,
   TextField,
   Icon,
-  Checkbox,
 } from "@shopify/polaris";
 import { useState, useRef } from "react";
 import { CalendarIcon } from "@shopify/polaris-icons";
@@ -30,7 +29,6 @@ export default function DateAndTimePicker({
 
   const formattedStartDate = sDate.toLocaleDateString("en-PK");
   const formattedEndDate = eDate.toLocaleDateString("en-PK");
-  const [check, setCheck] = useState(false);
 
   // Handle Date Change for Start Date
   const handleStartDateSelection = ({ end: newSelectedDate }) => {
@@ -44,20 +42,16 @@ export default function DateAndTimePicker({
   // Handle Date Change for End Date
   const handleEndDateSelection = ({ end: newSelectedDate }) => {
     const localDate = new Date(newSelectedDate);
-    // if (localDate < sDate) {
-    //   alert("End date cannot be before the start date.");
-    //   return;
-    // }
     setEdate(localDate);
   };
 
   return (
     <BlockStack>
-      {/* Start Date and Time Inputs */}
-      <div style={{ display: "flex", gap: 40 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <Box minWidth="240px">
+      <div style={styles.container}>
+        <div style={styles.dateTimeColumn}>
+          {/* Start Date and Time Inputs */}
+          <div style={styles.row}>
+            <Box minWidth="240px" style={{ flex: 1 }}>
               <Popover
                 active={startPickerVisible}
                 onClose={() => setStartPickerVisible(false)}
@@ -87,65 +81,95 @@ export default function DateAndTimePicker({
               </Popover>
             </Box>
 
-            {/* Use TimeSelector for Start Time */}
-            <Box minWidth="240px">
+            <Box minWidth="240px" style={{ flex: 1 }}>
               <TimeSelector
-                label={stime}
+                label={"Start time"}
                 selectedTime={stime}
                 setSelectedTime={setStime}
               />
             </Box>
           </div>
-          <Checkbox
-            label={!check ? "Set End Date" : "Add The End Date"}
-            checked={check}
-            onChange={() => setCheck((prevCheck) => !prevCheck)}
-          />
-          {/* End Date and Time Inputs */}
-          {check && (
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <Box minWidth="240px">
-                <Popover
-                  active={endPickerVisible}
-                  onClose={() => setEndPickerVisible(false)}
-                  activator={
-                    <TextField
-                      role="combobox"
-                      label={"End date"}
-                      value={formattedEndDate}
-                      prefix={<Icon source={CalendarIcon} />}
-                      onFocus={() => setEndPickerVisible(true)}
-                      autoComplete="off"
-                      readOnly
-                    />
-                  }
-                >
-                  <Card ref={endDatePickerRef}>
-                    <DatePicker
-                      month={eDate.getMonth()}
-                      year={eDate.getFullYear()}
-                      selected={eDate}
-                      onMonthChange={(month, year) => {
-                        setEdate(new Date(year, month, 1));
-                      }}
-                      onChange={handleEndDateSelection}
-                    />
-                  </Card>
-                </Popover>
-              </Box>
 
-              {/* Use TimeSelector for End Time */}
-              <Box minWidth="240px">
-                <TimeSelector
-                  label={etime}
-                  selectedTime={etime}
-                  setSelectedTime={setEtime}
-                />
-              </Box>
-            </div>
-          )}
+          {/* End Date and Time Inputs */}
+          <div style={styles.row}>
+            <Box minWidth="240px" style={{ flex: 1 }}>
+              <Popover
+                active={endPickerVisible}
+                onClose={() => setEndPickerVisible(false)}
+                activator={
+                  <TextField
+                    role="combobox"
+                    label={"End date"}
+                    value={formattedEndDate}
+                    prefix={<Icon source={CalendarIcon} />}
+                    onFocus={() => setEndPickerVisible(true)}
+                    autoComplete="off"
+                    readOnly
+                  />
+                }
+              >
+                <Card ref={endDatePickerRef}>
+                  <DatePicker
+                    month={eDate.getMonth()}
+                    year={eDate.getFullYear()}
+                    selected={eDate}
+                    onMonthChange={(month, year) => {
+                      setEdate(new Date(year, month, 1));
+                    }}
+                    onChange={handleEndDateSelection}
+                  />
+                </Card>
+              </Popover>
+            </Box>
+
+            <Box minWidth="240px" style={{ flex: 1 }}>
+              <TimeSelector
+                label={"End time"}
+                selectedTime={etime}
+                setSelectedTime={setEtime}
+              />
+            </Box>
+          </div>
         </div>
       </div>
     </BlockStack>
   );
 }
+
+// Styles with media queries for responsiveness
+const styles = {
+  container: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+  },
+  dateTimeColumn: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+  },
+  row: {
+    display: "flex",
+    gap: "20px",
+    flexWrap: "wrap",
+    alignItems: "center",
+  },
+  "@media (max-width: 768px)": {
+    row: {
+      flexDirection: "column",
+      gap: "10px",
+    },
+    container: {
+      padding: "5px",
+    },
+  },
+  "@media (min-width: 769px) and (max-width: 1024px)": {
+    row: {
+      flexDirection: "row",
+      gap: "20px",
+    },
+    dateTimeColumn: {
+      gap: "16px",
+    },
+  },
+};

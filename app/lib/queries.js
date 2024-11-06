@@ -120,4 +120,35 @@ query getProductVariants($id: ID!) {
 }
 `;
 
-// , sortKey: CREATED_AT, reverse: true
+// Get All Collections
+export const getAllCollections = `
+query collectionInfo {
+  collections(first: 100) {
+    edges {
+      node {
+        id
+        title
+        products(first: 100) {
+          edges {
+            node {
+              id
+              title
+              status
+              variants(first: 10) {
+                edges {
+                  node {
+                    id
+                    price
+                    compareAtPrice
+                    displayName
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`;
