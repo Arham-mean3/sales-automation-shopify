@@ -3,14 +3,54 @@ import React, {
   createContext,
   useEffect,
   useMemo,
+  useCallback,
 } from "react";
 
-export const SelectContext = createContext();
+const INITIAL_STATES = {
+  product: [],
+  selectedCollection: [],
+  activeProducts: [],
+  disableProducts: [],
+  scheduleProducts: [],
+  setProducts: () => {},
+  setCollection: () => {},
+  setSelectedCollection: () => {},
+  setActiveProducts: () => {},
+  setSales: () => {},
+  handleAddProducts: (productVariants, productId) => {},
+  removeProducts: (productId) => {},
+  removeCollection: (collectionId) => {},
+  removeVariant: (productId, variantId) => {},
+};
+export const SelectContext = createContext(INITIAL_STATES);
 
 export default function SelectContextProvider({ children }) {
   const [products, setProducts] = useState([]);
   const [collection, setCollection] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState([]);
+  const [activeProducts, setActiveProducts] = useState([]);
+  const [scheduleProducts, setScheduleProducts] = useState([]);
+  const [disableProducts, setDisableProducts] = useState([]);
+  const [sales, setSales] = useState([]);
+
+  const deselectedSalesData = useMemo(
+    () =>
+      sales.map((sale) => ({
+        id: sale.id,
+        salesType: sale.salesType,
+        salesValue: sale.salesValue,
+        sDate: sale.sDate,
+        eDate: sale.eDate,
+        stime: sale.stime,
+        etime: sale.etime,
+        status: sale.status,
+        products: sale.products.map((product) => ({
+          id: product.pId,
+          variants: product.variants.map((variant) => variant.variantId),
+        })),
+      })),
+    [sales],
+  );
 
   const deselectedCollections = useMemo(
     () =>
@@ -121,22 +161,45 @@ export default function SelectContextProvider({ children }) {
     }
   };
 
-  useEffect(() => {
-    // console.log("Selected Products", products);
-  }, [products]);
+  const filterActiveProducts = useCallback(() => {
+    const isActive = deselectedSalesData.filter(
+      (sale) => sale.status === "Active",
+    );
+    setActiveProducts(isActive);
+  }, [deselectedSalesData]);
 
-  // useEffect(() => {
-  //   console.log("All Collections", deselectedCollections);
-  // }, [collection]);
+  const filterScheduleProducts = useCallback(() => {
+    const isSchedule = deselectedSalesData.filter(
+      (sale) => sale.status === "Schedule",
+    );
+    setScheduleProducts(isSchedule);
+  }, [deselectedSalesData]);
+
+  const filterDisableProducts = useCallback(() => {
+    const isDisable = deselectedSalesData.filter(
+      (sale) => sale.status === "Disabled",
+    );
+    setDisableProducts(isDisable);
+  }, [deselectedSalesData]);
+
+  // Run both filters whenever 'sales' changes
+  useEffect(() => {
+    console.log("All Sales Value", sales);
+    filterActiveProducts();
+    filterScheduleProducts();
+    filterDisableProducts();
+  }, [sales, filterActiveProducts, filterDisableProducts]);
 
   useEffect(() => {
-    // console.log("All Selected Collection", selectedCollection);
     fetchProductsFromSelectedCollections();
   }, [selectedCollection]);
 
   const value = {
     products,
     selectedCollection,
+    activeProducts,
+    scheduleProducts,
+    disableProducts,
     handleAddProducts,
     removeProduct,
     removeVariant,
@@ -144,6 +207,8 @@ export default function SelectContextProvider({ children }) {
     setCollection,
     setSelectedCollection,
     removeCollection,
+    setActiveProducts,
+    setSales,
   };
 
   return (

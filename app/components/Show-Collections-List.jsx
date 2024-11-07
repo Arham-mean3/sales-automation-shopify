@@ -4,7 +4,7 @@ import { PlusIcon, XIcon } from "@shopify/polaris-icons";
 import { SelectContext } from "../context/Select-Context";
 
 export default function ShowCollectionsList({ products }) {
-  console.log("Show Selected Products", products);
+  // console.log("Show Selected Products", products);
 
   const {
     handleAddProducts,

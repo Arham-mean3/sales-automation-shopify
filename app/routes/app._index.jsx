@@ -11,7 +11,6 @@ import {
   getProductsQuery,
   updateProductVariantsPrice,
 } from "../lib/queries";
-import { addProduct, updateProductVariants } from "../lib/action";
 import { dateToCron, parseDate } from "../lib/utils";
 import { styles } from "../styles";
 import IndexTableWithViewsSearch from "../components/SalesAllList";
@@ -71,197 +70,223 @@ export const action = async ({ request }) => {
   const { actionKey: key } = formData;
 
   switch (key) {
-    case "CREATE_PRODUCT":
-      try {
-        // Add the product first
-        const product = await addProduct(admin, formData);
-        const variantId = product.variants.edges[0].node.id;
-
-        // Update the product variants
-        const updatedVariants = await updateProductVariants(
-          admin,
-          product.id,
-          variantId,
-          formData,
-        );
-
-        return json({
-          product: product,
-          variant: updatedVariants,
-        });
-      } catch (error) {
-        // Return a clear error message if the JSON parsing fails
-        const errorMessage = error.message || "Something went wrong";
-        return json({ errors: errorMessage }, { status: 400 });
-      }
-    case "CREATE_SALES":
+    case "APPLY_SALES":
       try {
         const results = []; // Collect results here
-        // const salesJobs = {}; // Store job references by sale ID
         const startTime = performance.now(); // Start time measurement
 
-        const { products, salesType, salesValue, sDate, eDate, etime, stime } =
-          formData;
+        const { products } = formData;
         const productsData = JSON.parse(products);
 
-        const startDate = parseDate(sDate); // Combines sDate and stime
-        const endDate = parseDate(eDate); // Combines eDate and etime
+        const startSaleForEachProduct = (product) => {
+          // Destructuring the data from products
+          const {
+            id,
+            products,
+            sDate,
+            stime,
+            eDate,
+            etime,
+            salesType,
+            salesValue,
+          } = product;
 
-        const cronExpressions = dateToCron(startDate, stime);
-        const cronExpressione = dateToCron(endDate, etime);
+          const startDate = parseDate(sDate); // Combines sDate and stime
+          const endDate = parseDate(eDate); // Combines eDate and etime
 
-        console.log(cronExpressions, cronExpressione);
+          const cronExpressions = dateToCron(startDate, stime);
+          const cronExpressione = dateToCron(endDate, etime);
 
-        // Define the start and end functions
-        const startSale = async () => {
-          console.log("Starting sale at:", startDate);
-          for (const product of productsData) {
-            const { id: productId, variants } = product;
-            for (const variantId of variants) {
-              try {
-                let originalPrice;
-                let newPrice;
+          // console.log("Start Date:", startDate); // Log the start date
+          // console.log("End Date:", endDate); // Log the end date
+          console.log("---------------------------------------------------");
+          console.log("Cron Expressions:", cronExpressions, cronExpressione);
+          console.log("---------------------------------------------------");
+          // Define the start and end functions
+          const startSale = async () => {
+            console.log("Starting sale at:", startDate);
+            await prisma.sale.update({
+              where: {
+                id: id, // The ID of the sale you are starting
+                status: "Schedule", // Only update if the current status is "Schedule"
+              },
+              data: {
+                status: "Active", // Change the status to "Active"
+              },
+            });
 
-                const variantPriceQuery = await admin.graphql(
-                  `#graphql
-                  query getVariantPrice($id: ID!) {
-                    productVariant(id: $id) {
-                      price
-                      compareAtPrice
-                    }
-                  }
-                `,
-                  { variables: { id: variantId } },
-                );
+            for (const product of products) {
+              const { id: productId, variants } = product;
+              console.log(productId, variants);
+              for (const variantId of variants) {
+                try {
+                  let originalPrice;
+                  let newPrice;
 
-                const variantPriceResponse = await variantPriceQuery.json();
-                let price = parseFloat(
-                  variantPriceResponse?.data?.productVariant?.price,
-                );
-                let compareAtPrice = parseFloat(
-                  variantPriceResponse?.data?.productVariant?.compareAtPrice,
-                );
-
-                // If compareAtPrice exists, use it as the current price and set compareAtPrice to null
-                if (compareAtPrice) {
-                  originalPrice = compareAtPrice;
-                  compareAtPrice = null;
-                } else {
-                  originalPrice = price;
-                }
-
-                console.log("Original Price (before discount)", originalPrice);
-
-                if (salesType === "PERCENTAGE") {
-                  const discountPercentage = parseFloat(salesValue) / 100;
-                  newPrice = originalPrice * (1 - discountPercentage);
-
-                  console.log("Discounted New Price", newPrice);
-                }
-
-                const productSaleUpdate = await admin.graphql(
-                  `#graphql
-                  ${updateProductVariantsPrice}
-                `,
-                  {
-                    variables: {
-                      productId: productId,
-                      variants: [
-                        {
-                          id: variantId,
-                          price: parseFloat(newPrice).toFixed(2),
-                          compareAtPrice: parseFloat(originalPrice).toFixed(2),
-                        },
-                      ],
-                    },
-                  },
-                );
-
-                const salesUpdate = await productSaleUpdate.json();
-                console.log("SALE UPDATED: ", salesUpdate);
-
-                results.push({
-                  productId,
-                  variantId,
-                  success: true,
-                  salesUpdate,
-                  sale: true,
-                });
-              } catch (error) {
-                console.log("Error processing variant ID:", variantId, error);
-                results.push({ productId, variantId, success: false, error });
-              }
-            }
-          }
-        };
-
-        const endSale = async () => {
-          console.log("Ending sale at:", endDate);
-          for (const product of productsData) {
-            const { id: productId, variants } = product;
-            for (const variantId of variants) {
-              try {
-                // Fetch the current compareAtPrice to use as the original price
-                const variantPriceQuery = await admin.graphql(
-                  `#graphql
-                    query getVariantCompareAtPrice($id: ID!) {
+                  const variantPriceQuery = await admin.graphql(
+                    `#graphql
+                    query getVariantPrice($id: ID!) {
                       productVariant(id: $id) {
+                        price
                         compareAtPrice
                       }
                     }
                   `,
-                  { variables: { id: variantId } },
-                );
+                    { variables: { id: variantId } },
+                  );
 
-                const variantPriceResponse = await variantPriceQuery.json();
-                const originalPrice = parseFloat(
-                  variantPriceResponse?.data?.productVariant?.compareAtPrice,
-                );
+                  const variantPriceResponse = await variantPriceQuery.json();
+                  let price = parseFloat(
+                    variantPriceResponse?.data?.productVariant?.price,
+                  );
+                  let compareAtPrice = parseFloat(
+                    variantPriceResponse?.data?.productVariant?.compareAtPrice,
+                  );
 
-                // Update the price to original and reset compareAtPrice to 0
-                const productRevertUpdate = await admin.graphql(
-                  `#graphql
+                  // If compareAtPrice exists, use it as the current price and set compareAtPrice to null
+                  if (compareAtPrice) {
+                    originalPrice = compareAtPrice;
+                    compareAtPrice = null;
+                  } else {
+                    originalPrice = price;
+                  }
+
+                  console.log(
+                    "Original Price (before discount)",
+                    originalPrice,
+                  );
+
+                  if (salesType === "PERCENTAGE") {
+                    const discountPercentage = parseFloat(salesValue) / 100;
+                    newPrice = originalPrice * (1 - discountPercentage);
+
+                    console.log("Discounted New Price", newPrice);
+                  }
+
+                  const productSaleUpdate = await admin.graphql(
+                    `#graphql
                     ${updateProductVariantsPrice}
                   `,
-                  {
-                    variables: {
-                      productId: productId,
-                      variants: [
-                        {
-                          id: variantId,
-                          price: parseFloat(originalPrice).toFixed(2), // Set price to original
-                          compareAtPrice: null, // Set compareAtPrice to null (or 0)
-                        },
-                      ],
+                    {
+                      variables: {
+                        productId: productId,
+                        variants: [
+                          {
+                            id: variantId,
+                            price: parseFloat(newPrice).toFixed(2),
+                            compareAtPrice:
+                              parseFloat(originalPrice).toFixed(2),
+                          },
+                        ],
+                      },
                     },
-                  },
-                );
+                  );
 
-                const revertUpdateResponse = await productRevertUpdate.json();
-                results.push({
-                  productId,
-                  variantId,
-                  success: true,
-                  revertUpdateResponse,
-                  sale: false,
-                });
-              } catch (error) {
-                console.log("Error reverting variant ID:", variantId, error);
-                results.push({ productId, variantId, success: false, error });
+                  const salesUpdate = await productSaleUpdate.json();
+                  console.log("SALE UPDATED: ", salesUpdate);
+
+                  results.push({
+                    productId,
+                    variantId,
+                    saleStarted: true,
+                    salesUpdate,
+                    sale: true,
+                  });
+                } catch (error) {
+                  console.log("Error processing variant ID:", variantId, error);
+                  results.push({ productId, variantId, saleStarted: false, error });
+                }
               }
             }
-          }
+          };
+
+          const endSale = async () => {
+            console.log("Ending sale at:", endDate);
+            await prisma.sale.updateMany({
+              where: {
+                id: id, // The ID of the sale you are starting
+                status: "Active", // Only update if the current status is "Active"
+              },
+              data: {
+                status: "Disabled", // Change the status to "Disabled"
+              },
+            });
+            for (const product of products) {
+              const { id: productId, variants } = product;
+              console.log(productId, variants);
+              for (const variantId of variants) {
+                try {
+                  // Fetch the current compareAtPrice to use as the original price
+                  const variantPriceQuery = await admin.graphql(
+                    `#graphql
+                      query getVariantCompareAtPrice($id: ID!) {
+                        productVariant(id: $id) {
+                          compareAtPrice
+                        }
+                      }
+                    `,
+                    { variables: { id: variantId } },
+                  );
+
+                  const variantPriceResponse = await variantPriceQuery.json();
+                  const originalPrice = parseFloat(
+                    variantPriceResponse?.data?.productVariant?.compareAtPrice,
+                  );
+
+                  console.log("Original Price", originalPrice);
+
+                  // Update the price to original and reset compareAtPrice to 0
+                  const productRevertUpdate = await admin.graphql(
+                    `#graphql
+                      ${updateProductVariantsPrice}
+                    `,
+                    {
+                      variables: {
+                        productId: productId,
+                        variants: [
+                          {
+                            id: variantId,
+                            price: parseFloat(originalPrice).toFixed(2), // Set price to original
+                            compareAtPrice: null, // Set compareAtPrice to null (or 0)
+                          },
+                        ],
+                      },
+                    },
+                  );
+
+                  const revertUpdateResponse = await productRevertUpdate.json();
+
+                  console.log("Revert Update Response", revertUpdateResponse);
+
+                  results.push({
+                    productId,
+                    variantId,
+                    saleEnded: true,
+                    revertUpdateResponse,
+                    sale: false,
+                  });
+                } catch (error) {
+                  console.log("Error reverting variant ID:", variantId, error);
+                  results.push({ productId, variantId, saleEnded: false, error });
+                }
+              }
+            }
+          };
+
+          // Schedule start and end cron jobs
+          const startJob = cron.schedule(cronExpressions, startSale, {
+            scheduled: true,
+          });
+          const endJob = cron.schedule(cronExpressione, endSale, {
+            scheduled: true,
+          });
+
+          console.log(startJob, endJob);
         };
 
-        // Schedule start and end cron jobs
-        const startJob = cron.schedule(cronExpressions, startSale, {
-          scheduled: true,
-        });
-        const endJob = cron.schedule(cronExpressione, endSale, {
-          scheduled: true,
-        });
-
-        console.log(startJob, endJob);
+        for (const product of productsData) {
+          startSaleForEachProduct(product);
+        }
 
         const endTime = performance.now(); // End time measurement
         const totalProcessingTime = (endTime - startTime) / 1000; // Calculate total processing time
@@ -314,7 +339,7 @@ export const action = async ({ request }) => {
             eDate: new Date(eDate), // Ensure eDate is a Date object
             stime: stime,
             etime: etime,
-            status: "Active",
+            status: "Schedule",
             products: {
               create: productsData.map((product) => ({
                 pId: product.id,
@@ -328,14 +353,29 @@ export const action = async ({ request }) => {
           },
         });
 
+        // Fetch the updated list of all sales
+        const allSales = await prisma.sale.findMany({
+          include: {
+            products: {
+              include: {
+                variants: true,
+              },
+            },
+          },
+        });
+
         console.log(newSale);
         return json(
-          { message: "Sales Created Successfully!", salesCreated: true },
+          {
+            message: "Sales Created Successfully!",
+            salesAdded: true,
+            sales: allSales,
+          },
           { status: 201 },
         );
       } catch (error) {
         console.log("NEW Error", error);
-        return json({ errors: error, salesCreated: false }, { status: 400 });
+        return json({ errors: error, salesAdded: false }, { status: 400 });
       }
     case "DELETE":
       try {
@@ -406,8 +446,16 @@ export default function Index() {
   const AllSales = JSON.parse(allSales);
   const fetcher = useFetcher();
 
-  const { products, setCollection, setProducts, setSelectedCollection } =
-    useContext(SelectContext);
+  console.log(AllSales);
+  const {
+    products,
+    activeProducts,
+    scheduleProducts,
+    setCollection,
+    setProducts,
+    setSelectedCollection,
+    setSales,
+  } = useContext(SelectContext);
 
   const [salesType, setSalesType] = useState("PERCENTAGE");
   const [salesValue, setSalesValue] = useState("");
@@ -435,6 +483,11 @@ export default function Index() {
 
   // error----- setError
   const [error, setError] = useState(false);
+
+
+  const salesData = fetcher.data?.sales;
+  const salesStarted = fetcher.data?.result?.saleStarted;
+  const res = fetcher.data?.statusChanged;
 
   // Handle Sales Types Function
   const handleSelectSalesTypeChanges = useCallback(
@@ -529,11 +582,11 @@ export default function Index() {
     }
   };
 
-  const deleteSale = async () => {
+  const deleteSale = async (id) => {
     try {
       const formData = {
         actionKey: "DELETE",
-        saleId: "624d1aaa-c988-4508-b786-42baa0ed9535",
+        saleId: id,
       };
       await fetcher.submit(formData, { method: "POST" });
     } catch (error) {
@@ -549,16 +602,50 @@ export default function Index() {
       console.error(error);
     }
   };
+
+  const handleApplySales = async () => {
+    console.log("APPLY_SALES FUNCTION CALLED!");
+
+    const formData = {
+      actionKey: "APPLY_SALES",
+      products: JSON.stringify(scheduleProducts),
+    };
+    try {
+       await fetcher.submit(formData, { method: "POST" });
+    } catch (error) {
+      console.log("Something went wrong.", error);
+    }
+  };
+
+  console.log("Sale Started", salesStarted)
+
   useEffect(() => {
     setCollection(allCollection);
   }, [allCollection]);
 
+  useEffect(() => {
+    setSales(AllSales);
+  }, []);
+
+  useEffect(() => {
+    console.log("All Sales", salesData);
+    if (salesData) {
+      setSales(salesData);
+    }
+  }, [salesData]);
+
+  useEffect(() => {
+    if (scheduleProducts.length > 0) {
+      console.log("Schedule Products:------", scheduleProducts);
+      handleApplySales();
+    }
+  }, [scheduleProducts.length > 0, salesData]);
   // useEffect(() => {
   //   console.log("All Sales", AllSales);
   //   // console.log("Sessions", sessions)
   // }, [AllSales]);
 
-  const res = fetcher.data?.statusChanged;
+
 
   useEffect(() => {
     if (res) {
@@ -567,6 +654,15 @@ export default function Index() {
       setToastMessage("Status updated successfully!");
     }
   }, [res]);
+
+  useEffect(()=>{
+    if(salesStarted){
+      console.log("Sale Started data", allSales)
+    }
+    else{
+      console.log("Not Sale Started data")
+    }
+  }, [salesStarted])
 
   return (
     <Frame>
@@ -628,7 +724,13 @@ export default function Index() {
                       Create Sales
                     </Button>
 
-                    {/* <Button onClick={() => deleteSale()}>Delete Sales</Button> */}
+                    <Button
+                      onClick={() =>
+                        deleteSale("")
+                      }
+                    >
+                      Delete Sales
+                    </Button>
                   </div>
                   <IndexTableWithViewsSearch
                     data={AllSales}

@@ -39,6 +39,8 @@ export const styles = {
     gap: 20,
   },
   table: {
+    display: "flex",
+    flexDirection: "column",
     maxWidth: "75%",
     overflowX: "auto",
   },
@@ -74,6 +76,9 @@ export const styles = {
   },
   salesTag: {
     marginBottom: 0,
+  },
+  conditional: {
+    width: 600,
   },
   "@media (max-width: 768px)": {
     gridContainer: {

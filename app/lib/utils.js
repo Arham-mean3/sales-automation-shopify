@@ -6,16 +6,30 @@ export function formatDateToDDMMYYYY(date) {
   return `${day}-${month}-${year}`; // Format as "dd-mm-yyyy"
 }
 
+// export const parseDate = (dateString) => {
+//   // Parse the date parts
+//   const [dayName, monthName, day, year] = dateString.toString().split(" ");
+//   const month = new Date(`${monthName} 1`).getMonth(); // Get month as a number
+//   const date = new Date(year, month, day);
+
+//   // Adjust to UTC by accounting for timezone offset
+//   const offset = date.getTimezoneOffset(); // Offset in minutes
+//   date.setMinutes(date.getMinutes() - offset);
+
+//   return date;
+// };
+
 export const parseDate = (dateString) => {
-  // Parse the date parts
-  const [dayName, monthName, day, year] = dateString.toString().split(" ");
-  const month = new Date(`${monthName} 1`).getMonth(); // Get month as a number
-  const date = new Date(year, month, day);
+  // Directly create a Date object from ISO 8601 string (no need for custom parsing)
+  const date = new Date(dateString);
 
-  // Adjust to UTC by accounting for timezone offset
-  const offset = date.getTimezoneOffset(); // Offset in minutes
-  date.setMinutes(date.getMinutes() - offset);
+  // If the date is invalid, return an error or a default date
+  if (isNaN(date)) {
+    console.error("Invalid date:", dateString);
+    return null; // Or handle the error as needed
+  }
 
+  // Return the date object directly (already in correct format)
   return date;
 };
 

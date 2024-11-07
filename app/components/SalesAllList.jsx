@@ -10,6 +10,7 @@ import {
 } from "@shopify/polaris";
 import { useState, useCallback, useMemo } from "react";
 import { calculateTimeEstimation, formatDateTime } from "../lib/utils";
+import { styles } from "../styles";
 
 export default function IndexTableWithViewsSearch({ data, salesHandler }) {
   const deselectedSalesData = useMemo(() => {
@@ -29,10 +30,10 @@ export default function IndexTableWithViewsSearch({ data, salesHandler }) {
       //   variants: product.variants.map((variant) => variant.variantId),
       // })),
     }));
-  }, [data]);
+  }, [JSON.stringify(data)]);
 
   // console.log("Unselected Sales Data", data);
-  console.log("Deselected Sales Data", deselectedSalesData);
+  // console.log("Deselected Sales Data", deselectedSalesData);
 
   const [queryValue, setQueryValue] = useState("");
   const handleFiltersQueryChange = useCallback(
@@ -69,7 +70,17 @@ export default function IndexTableWithViewsSearch({ data, salesHandler }) {
 
   const rowMarkup = paginatedOrders.map(
     (
-      { id, title, sDate, eDate, variants, status, length, timeEstimation, id: productId},
+      {
+        id,
+        title,
+        sDate,
+        eDate,
+        variants,
+        status,
+        length,
+        timeEstimation,
+        id: productId,
+      },
       index,
     ) => (
       <IndexTable.Row
@@ -96,21 +107,46 @@ export default function IndexTableWithViewsSearch({ data, salesHandler }) {
             <Badge progress="complete" tone="success">
               Active
             </Badge>
-          ) : (
+          ) : status === "Disabled" ? (
             <Badge progress="partiallyComplete" tone="critical">
               Disable
             </Badge>
+          ) : (
+            status === "Schedule" && (
+              <Badge progress="partiallyComplete" tone="warning">
+                Schedule
+              </Badge>
+            )
           )}
         </IndexTable.Cell>
         <IndexTable.Cell>
           {status === "Active" ? (
-            <Button variant="tertiary" tone="critical" onClick={() => salesHandler(productId)}>
+            <Button
+              variant="tertiary"
+              tone="critical"
+              onClick={() => salesHandler(productId)}
+            >
               Disable
             </Button>
-          ) : (
-            <Button variant="primary" tone="success" onClick={() => salesHandler(productId)}>
+          ) : status === "Disabled" ? (
+            <Button
+              variant="primary"
+              tone="success"
+              onClick={() => salesHandler(productId)}
+            >
               Active
             </Button>
+          ) : (
+            status === "Schedule" && (
+              // <Text tone="magic-subdued">Soon to be Started</Text>
+              <Button
+                variant="tertiary"
+                tone="critical"
+                onClick={() => salesHandler(productId)}
+              >
+                Disable
+              </Button>
+            )
           )}
         </IndexTable.Cell>
       </IndexTable.Row>
@@ -140,32 +176,34 @@ export default function IndexTableWithViewsSearch({ data, salesHandler }) {
           onClearButtonClick={handleQueryValueRemove}
         />
       </div>
-      <IndexTable
-        condensed={useBreakpoints().smDown}
-        resourceName={resourceName}
-        itemCount={filteredOrders.length}
-        selectedItemsCount={
-          allResourcesSelected ? "All" : selectedResources.length
-        }
-        onSelectionChange={handleSelectionChange}
-        headings={[
-          { title: "Sales Title" },
-          { title: "Product/Collections Count" },
-          { title: "Time Estimation" },
-          { title: "Start Date" },
-          { title: "End Date" },
-          { title: "Status" },
-          { title: "Actions" },
-        ]}
-        pagination={{
-          hasNext: currentPage < totalPages - 1,
-          hasPrevious: currentPage > 0,
-          onNext: handleNextPage,
-          onPrevious: handlePreviousPage,
-        }}
-      >
-        {rowMarkup}
-      </IndexTable>
+      <div style={filteredOrders.length === 0 ? { width: 700 } : null}>
+        <IndexTable
+          condensed={useBreakpoints().smDown}
+          resourceName={resourceName}
+          itemCount={filteredOrders.length}
+          selectedItemsCount={
+            allResourcesSelected ? "All" : selectedResources.length
+          }
+          onSelectionChange={handleSelectionChange}
+          headings={[
+            { title: "Sales Title" },
+            { title: "Product/Collections Count" },
+            { title: "Time Estimation" },
+            { title: "Start Date" },
+            { title: "End Date" },
+            { title: "Status" },
+            { title: "Actions" },
+          ]}
+          pagination={{
+            hasNext: currentPage < totalPages - 1,
+            hasPrevious: currentPage > 0,
+            onNext: handleNextPage,
+            onPrevious: handlePreviousPage,
+          }}
+        >
+          {rowMarkup}
+        </IndexTable>
+      </div>
     </LegacyCard>
   );
 }
