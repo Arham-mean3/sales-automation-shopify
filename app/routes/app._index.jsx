@@ -11,7 +11,7 @@ import {
   getProductsQuery,
   updateProductVariantsPrice,
 } from "../lib/queries";
-import { dateToCron, parseDate } from "../lib/utils";
+import { dateToCron, getSingleProduct, parseDate } from "../lib/utils";
 import { styles } from "../styles";
 import IndexTableWithViewsSearch from "../components/SalesAllList";
 import SalesModal from "../components/SalesModal";
@@ -194,7 +194,12 @@ export const action = async ({ request }) => {
                   });
                 } catch (error) {
                   console.log("Error processing variant ID:", variantId, error);
-                  results.push({ productId, variantId, saleStarted: false, error });
+                  results.push({
+                    productId,
+                    variantId,
+                    saleStarted: false,
+                    error,
+                  });
                 }
               }
             }
@@ -267,7 +272,12 @@ export const action = async ({ request }) => {
                   });
                 } catch (error) {
                   console.log("Error reverting variant ID:", variantId, error);
-                  results.push({ productId, variantId, saleEnded: false, error });
+                  results.push({
+                    productId,
+                    variantId,
+                    saleEnded: false,
+                    error,
+                  });
                 }
               }
             }
@@ -397,10 +407,36 @@ export const action = async ({ request }) => {
       try {
         const { id } = formData;
 
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + 1); // Add 1 minute
+        const hours = String(now.getHours()).padStart(2, "0");
+        const minutes = String(now.getMinutes()).padStart(2, "0");
+        const currentTime = `${hours}:${minutes}`; // Time in HH:MM format, 1 minute ahead
+
+        console.log("Time 1 minute later:", currentTime);
         // Fetch the current sale to get the current status
         const currentSale = await prisma.sale.findUnique({
           where: { id: id },
-          select: { status: true }, // Select only the status field
+          select: {
+            status: true,
+            products: {
+              select: {
+                pId: true, // Assuming pId is a field on the 'products' model
+                variants: {
+                  select: {
+                    variantId: true, // Assuming variantId is a field on the 'variants' model
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const processedSaleData = currentSale.products.map((product) => {
+          return {
+            id: product.pId, // Product ID
+            variants: product.variants.map((variant) => variant.variantId), // Map variants to an array of variant IDs
+          };
         });
 
         if (!currentSale) {
@@ -408,6 +444,75 @@ export const action = async ({ request }) => {
             { message: "Sale not found", statusChanged: false },
             { status: 404 },
           );
+        }
+        console.log("Current Sales", processedSaleData);
+
+        if (currentSale.status === "Active") {
+          const endDate = parseDate(new Date().toISOString());
+          const cronExpressione = dateToCron(endDate, currentTime);
+
+          console.log("Cron Expression for Ending sales", cronExpressione);
+
+          const endSale = async () => {
+            console.log("Ending sale at:", endDate);
+            for (const product of processedSaleData) {
+              const { id: productId, variants } = product;
+              console.log(productId, variants);
+              for (const variantId of variants) {
+                try {
+                  // Fetch the current compareAtPrice to use as the original price
+                  const variantPriceQuery = await admin.graphql(
+                    `#graphql
+                      query getVariantCompareAtPrice($id: ID!) {
+                        productVariant(id: $id) {
+                          compareAtPrice
+                        }
+                      }
+                    `,
+                    { variables: { id: variantId } },
+                  );
+
+                  const variantPriceResponse = await variantPriceQuery.json();
+                  const originalPrice = parseFloat(
+                    variantPriceResponse?.data?.productVariant?.compareAtPrice,
+                  );
+
+                  console.log("Original Price", originalPrice);
+
+                  // Update the price to original and reset compareAtPrice to 0
+                  const productRevertUpdate = await admin.graphql(
+                    `#graphql
+                      ${updateProductVariantsPrice}
+                    `,
+                    {
+                      variables: {
+                        productId: productId,
+                        variants: [
+                          {
+                            id: variantId,
+                            price: parseFloat(originalPrice).toFixed(2), // Set price to original
+                            compareAtPrice: null, // Set compareAtPrice to null (or 0)
+                          },
+                        ],
+                      },
+                    },
+                  );
+
+                  const revertUpdateResponse = await productRevertUpdate.json();
+
+                  console.log("Revert Update Response", revertUpdateResponse);
+                } catch (error) {
+                  console.log("Error reverting variant ID:", variantId, error);
+                }
+              }
+            }
+          };
+
+          const endJob = cron.schedule(cronExpressione, endSale, {
+            scheduled: true,
+          });
+
+          console.log(endJob);
         }
 
         // Toggle the status text
@@ -436,6 +541,106 @@ export const action = async ({ request }) => {
           { status: 400 },
         );
       }
+    case "UPDATE_SALES":
+      try {
+        const {
+          id,
+          salesValue,
+          salesType,
+          salesTitle,
+          saleTags,
+          etime,
+          stime,
+          sDate,
+          eDate,
+          products,
+        } = formData;
+
+        // Parse the products JSON string to an array of products
+        const parsedProducts = JSON.parse(products);
+
+        console.log("Updating Products", parsedProducts);
+
+        const existingSale = await prisma.sale.findUnique({
+          where: { id: id },
+          select: { status: true },
+        });
+
+        if (!existingSale) {
+          return json({ error: "Sale not found!" });
+        }
+
+        // Determine the new status based on the current status
+        let newStatus = existingSale.status;
+        if (existingSale.status === "Disabled") {
+          newStatus = "Scheduled";
+        } else if (existingSale.status === "Active") {
+          newStatus = "Schedule";
+        }
+
+        // Update the sale record in the database
+        // const updateSingleSale = await prisma.sale.update({
+        //   where: { id: id },
+        //   data: {
+        //     salesValue,
+        //     salesType,
+        //     salesTitle,
+        //     saleTags,
+        //     status: newStatus,
+        //     etime,
+        //     stime,
+        //     sDate: new Date(sDate),
+        //     eDate: new Date(eDate),
+        //     products: {
+        //       // Assuming `products` is a relation field in your schema,
+        //       // this approach replaces all existing products with the new array
+        //       some: parsedProducts.map((product) => ({
+        //         pId: product.id,
+        //         variants: {
+        //           some: product.variants.map((variantId) => ({
+        //             variantId: variantId,
+        //           })),
+        //         },
+        //       })),
+        //     },
+        //   },
+        // });
+        const updateSingleSale = await prisma.sale.update({
+          where: { id },
+          data: {
+            salesValue,
+            salesType,
+            salesTitle,
+            saleTags,
+            status: newStatus, // Adjust status based on your needs
+            etime,
+            stime,
+            sDate,
+            eDate,
+            // Updating products and their variants
+            products: {
+              connectOrCreate: products.map((product) => ({
+                where: { pId: product.id },
+                create: {
+                  pId: product.id,
+                  variants: {
+                    connectOrCreate: product.variants.map((variantId) => ({
+                      where: { variantId: variantId },
+                      create: { variantId: variantId },
+                    })),
+                  },
+                },
+              })),
+            },
+          },
+        });
+
+        return json({ success: true, sale: updateSingleSale });
+      } catch (error) {
+        console.error("Error updating sale:", error);
+        return json({ error: "Something went wrong!", details: error.message });
+      }
+
     default:
       break;
   }
@@ -449,12 +654,14 @@ export default function Index() {
   console.log(AllSales);
   const {
     products,
-    activeProducts,
     scheduleProducts,
+    update,
     setCollection,
     setProducts,
     setSelectedCollection,
     setSales,
+    findMatchingCollectionIds,
+    setUpdate,
   } = useContext(SelectContext);
 
   const [salesType, setSalesType] = useState("PERCENTAGE");
@@ -463,7 +670,8 @@ export default function Index() {
   const [toastMessage, setToastMessage] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [salesCollectionIds, setSalesCollectionIds] = useState([]);
-
+  // const [updateSales, setUpdateSales] = useState(false);
+  const [id, setId] = useState("");
   // Getting Data from the separate Components
 
   //----- Sales Title ---- Sales Tag
@@ -483,7 +691,6 @@ export default function Index() {
 
   // error----- setError
   const [error, setError] = useState(false);
-
 
   const salesData = fetcher.data?.sales;
   const salesStarted = fetcher.data?.result?.saleStarted;
@@ -582,6 +789,18 @@ export default function Index() {
     }
   };
 
+  const handleApplySales = async () => {
+    const formData = {
+      actionKey: "APPLY_SALES",
+      products: JSON.stringify(scheduleProducts),
+    };
+    try {
+      await fetcher.submit(formData, { method: "POST" });
+    } catch (error) {
+      console.log("Something went wrong.", error);
+    }
+  };
+
   const deleteSale = async (id) => {
     try {
       const formData = {
@@ -603,21 +822,59 @@ export default function Index() {
     }
   };
 
-  const handleApplySales = async () => {
-    console.log("APPLY_SALES FUNCTION CALLED!");
+  const handleUpdateSale = async (id) => {
+    // For Updating and opening the model
+    setShowModal(true);
+    setUpdate(true);
 
-    const formData = {
-      actionKey: "APPLY_SALES",
-      products: JSON.stringify(scheduleProducts),
-    };
-    try {
-       await fetcher.submit(formData, { method: "POST" });
-    } catch (error) {
-      console.log("Something went wrong.", error);
+    // Setting Id for Updation
+    setId(id);
+    // Getting single product data
+    const product = getSingleProduct(id, AllSales);
+    const data = { ...product };
+    const value = data[0];
+    console.log("Single Product fetched", value);
+    const { matchingCollectionIds, orphanProducts } = findMatchingCollectionIds(
+      data[0].products,
+    );
+    console.log(matchingCollectionIds, orphanProducts);
+    setSelectedCollection(matchingCollectionIds);
+    setProducts(orphanProducts);
+    setSaleTitle(value.salesTitle);
+    setSaleTags(value.saleTags);
+    setSalesValue(value.salesValue);
+  };
+
+  const handleUpdate = async () => {
+    if (!validateSaleInputs()) {
+      return;
+    } else {
+      const formData = {
+        actionKey: "UPDATE_SALES",
+        id,
+        salesValue,
+        salesType,
+        salesTitle,
+        saleTags,
+        etime,
+        stime,
+        sDate,
+        eDate,
+        products: JSON.stringify(products),
+      };
+      try {
+        await fetcher.submit(formData, { method: "POST" });
+        setShowModal(false);
+        setToastMessage("Successfully Updated Sales");
+        setShowToast(true);
+        setError(false);
+      } catch (error) {
+        console.log("Something went wrong!", error);
+      }
     }
   };
 
-  console.log("Sale Started", salesStarted)
+  console.log("Sale Started", salesStarted);
 
   useEffect(() => {
     setCollection(allCollection);
@@ -640,12 +897,10 @@ export default function Index() {
       handleApplySales();
     }
   }, [scheduleProducts.length > 0, salesData]);
-  // useEffect(() => {
-  //   console.log("All Sales", AllSales);
-  //   // console.log("Sessions", sessions)
-  // }, [AllSales]);
 
-
+  useEffect(() => {
+    console.log("Id", id);
+  }, [id]);
 
   useEffect(() => {
     if (res) {
@@ -655,14 +910,13 @@ export default function Index() {
     }
   }, [res]);
 
-  useEffect(()=>{
-    if(salesStarted){
-      console.log("Sale Started data", allSales)
+  useEffect(() => {
+    if (salesStarted) {
+      console.log("Sale Started data", allSales);
+    } else {
+      console.log("Not Sale Started data");
     }
-    else{
-      console.log("Not Sale Started data")
-    }
-  }, [salesStarted])
+  }, [salesStarted]);
 
   return (
     <Frame>
@@ -697,10 +951,12 @@ export default function Index() {
                 saleTags={saleTags}
                 collections={allCollection}
                 salesCollectionIds={salesCollectionIds}
+                updateSales={update}
                 setStime={setStime}
                 setEtime={setEtime}
                 createSale={createSale}
                 handleSelectSalesTypeChanges={handleSelectSalesTypeChanges}
+                handleUpdate={handleUpdate}
                 setShowModal={setShowModal}
                 setSalesValue={setSalesValue}
                 setSdate={setSdate}
@@ -720,21 +976,33 @@ export default function Index() {
                       All Sales Listed
                     </Text>
 
-                    <Button onClick={() => setShowModal(true)} primary>
+                    <Button
+                      onClick={() => {
+                        setProducts([]);
+                        setSelectedCollection([]);
+                        setSaleTitle("");
+                        setSalesValue("");
+                        setSaleTags("");
+                        setUpdate(false);
+                        setShowModal(true);
+                      }}
+                      primary
+                    >
                       Create Sales
                     </Button>
 
-                    <Button
+                    {/* <Button
                       onClick={() =>
-                        deleteSale("")
+                        deleteSale("762637ab-5bad-43dc-976a-366a17131dde")
                       }
                     >
                       Delete Sales
-                    </Button>
+                    </Button> */}
                   </div>
                   <IndexTableWithViewsSearch
                     data={AllSales}
                     salesHandler={handleStatus}
+                    updateSalesHandler={handleUpdateSale}
                   />
                 </div>
                 <div style={styles.info}>

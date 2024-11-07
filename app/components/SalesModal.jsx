@@ -19,6 +19,7 @@ export default function SalesModal({
   stime,
   eDate,
   sDate,
+  updateSales,
   setStime,
   setEtime,
   products,
@@ -30,16 +31,21 @@ export default function SalesModal({
   setSaleTitle,
   setSaleTags,
   collections,
+  handleUpdate
 }) {
+  const modelHeading = updateSales ? "Update Sales" : "Apply Sales";
+  const contentText = updateSales ? "Update Sales Now!" : "Apply Sales Now!";
+  const actionFunc = updateSales ? handleUpdate : createSale
+
   return (
     <div>
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
-        title="Apply Sales"
+        title={modelHeading}
         primaryAction={{
-          content: "Apply Sales Now!",
-          onAction: createSale,
+          content: contentText,
+          onAction: actionFunc,
         }}
         secondaryActions={[
           {

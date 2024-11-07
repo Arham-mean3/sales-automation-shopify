@@ -3,7 +3,7 @@
 client_id = "8c343e825a810addc543e718aa692715"
 name = "arham-test-app"
 handle = "arham-test-app"
-application_url = "https://trash-bunny-acids-clips.trycloudflare.com"
+application_url = "https://potter-doubt-activated-bringing.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://trash-bunny-acids-clips.trycloudflare.com/auth/callback",
-  "https://trash-bunny-acids-clips.trycloudflare.com/auth/shopify/callback",
-  "https://trash-bunny-acids-clips.trycloudflare.com/api/auth/callback"
+  "https://potter-doubt-activated-bringing.trycloudflare.com/auth/callback",
+  "https://potter-doubt-activated-bringing.trycloudflare.com/auth/shopify/callback",
+  "https://potter-doubt-activated-bringing.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

@@ -73,3 +73,8 @@ export const calculateTimeEstimation = (products) => {
     return Math.floor(totalTime + productTime + variantsTime);
   }, 0);
 };
+
+export const getSingleProduct = (id, sales) => {
+  const getProductData = sales.filter((sale) => id === sale.id);
+  return getProductData;
+};

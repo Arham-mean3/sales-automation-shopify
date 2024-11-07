@@ -12,7 +12,11 @@ import { useState, useCallback, useMemo } from "react";
 import { calculateTimeEstimation, formatDateTime } from "../lib/utils";
 import { styles } from "../styles";
 
-export default function IndexTableWithViewsSearch({ data, salesHandler }) {
+export default function IndexTableWithViewsSearch({
+  data,
+  salesHandler,
+  updateSalesHandler,
+}) {
   const deselectedSalesData = useMemo(() => {
     return data.map((sale) => ({
       id: sale.id,
@@ -90,9 +94,17 @@ export default function IndexTableWithViewsSearch({ data, salesHandler }) {
         position={index}
       >
         <IndexTable.Cell>
-          <Text variant="bodyMd" fontWeight="bold" as="span">
-            {title}
-          </Text>
+          <button
+            style={styles.titleButton}
+            onClick={(e) => {
+              e.stopPropagation();
+              updateSalesHandler(id);
+            }}
+          >
+            <p style={styles.titleText}>
+              <span>{title}</span>
+            </p>
+          </button>
         </IndexTable.Cell>
         <IndexTable.Cell>
           {length} products with {variants} variants
@@ -121,24 +133,7 @@ export default function IndexTableWithViewsSearch({ data, salesHandler }) {
         </IndexTable.Cell>
         <IndexTable.Cell>
           {status === "Active" ? (
-            <Button
-              variant="tertiary"
-              tone="critical"
-              onClick={() => salesHandler(productId)}
-            >
-              Disable
-            </Button>
-          ) : status === "Disabled" ? (
-            <Button
-              variant="primary"
-              tone="success"
-              onClick={() => salesHandler(productId)}
-            >
-              Active
-            </Button>
-          ) : (
-            status === "Schedule" && (
-              // <Text tone="magic-subdued">Soon to be Started</Text>
+            <div onClick={(e) => e.stopPropagation()}>
               <Button
                 variant="tertiary"
                 tone="critical"
@@ -146,6 +141,29 @@ export default function IndexTableWithViewsSearch({ data, salesHandler }) {
               >
                 Disable
               </Button>
+            </div>
+          ) : status === "Disabled" ? (
+            <div onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="primary"
+                tone="success"
+                onClick={() => salesHandler(productId)}
+              >
+                Active
+              </Button>
+            </div>
+          ) : (
+            status === "Schedule" && (
+              // <Text tone="magic-subdued">Soon to be Started</Text>
+              <div onClick={(e) => e.stopPropagation()}>
+                <Button
+                  variant="tertiary"
+                  tone="critical"
+                  onClick={() => salesHandler(productId)}
+                >
+                  Disable
+                </Button>
+              </div>
             )
           )}
         </IndexTable.Cell>

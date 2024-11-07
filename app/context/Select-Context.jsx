@@ -12,15 +12,19 @@ const INITIAL_STATES = {
   activeProducts: [],
   disableProducts: [],
   scheduleProducts: [],
+  update: true,
   setProducts: () => {},
   setCollection: () => {},
   setSelectedCollection: () => {},
   setActiveProducts: () => {},
   setSales: () => {},
+  setUpdate: () => {},
   handleAddProducts: (productVariants, productId) => {},
   removeProducts: (productId) => {},
   removeCollection: (collectionId) => {},
   removeVariant: (productId, variantId) => {},
+  findMatchingCollectionIds:(collection, products) =>{},
+
 };
 export const SelectContext = createContext(INITIAL_STATES);
 
@@ -32,6 +36,7 @@ export default function SelectContextProvider({ children }) {
   const [scheduleProducts, setScheduleProducts] = useState([]);
   const [disableProducts, setDisableProducts] = useState([]);
   const [sales, setSales] = useState([]);
+  const [update, setUpdate] = useState(false);
 
   const deselectedSalesData = useMemo(
     () =>
@@ -70,6 +75,8 @@ export default function SelectContextProvider({ children }) {
       })),
     [collection],
   );
+
+  // const salesData = deselectedSalesData.flatMap((sale) => sale.products);
 
   const handleAddProducts = (productVariants, productId) => {
     // Extract only the variant IDs
@@ -161,6 +168,34 @@ export default function SelectContextProvider({ children }) {
     }
   };
 
+  const findMatchingCollectionIds = (salesProduct) => {
+    const productIdsMap = new Set(salesProduct.map((product) => product.pId));
+    const matchingCollectionIds = [];
+    const matchedProducts = new Set();
+  
+    // Iterate over each collection
+    for (const collection of deselectedCollections) {
+      const collectionProductIds = collection.products.map((product) => product.id);
+      const foundProducts = collectionProductIds.filter((productId) => productIdsMap.has(productId));
+  
+      // If all products in the collection are found and the collection has more than one product
+      if (foundProducts.length === collectionProductIds.length && foundProducts.length > 1) {
+        matchingCollectionIds.push(collection.value);
+        foundProducts.forEach((productId) => matchedProducts.add(productId));
+      }
+    }
+  
+    // Get products that were not matched to any collection
+    const orphanProducts = salesProduct
+    .filter((product) => !matchedProducts.has(product.pId))
+    .map((product) => ({
+      id: product.pId,
+      variants: product.variants.map((variant) => variant.variantId),
+    }));  
+  
+    return { matchingCollectionIds, orphanProducts };
+  };
+
   const filterActiveProducts = useCallback(() => {
     const isActive = deselectedSalesData.filter(
       (sale) => sale.status === "Active",
@@ -184,7 +219,7 @@ export default function SelectContextProvider({ children }) {
 
   // Run both filters whenever 'sales' changes
   useEffect(() => {
-    console.log("All Sales Value", sales);
+    // console.log("All Sales Value", sales);
     filterActiveProducts();
     filterScheduleProducts();
     filterDisableProducts();
@@ -194,13 +229,19 @@ export default function SelectContextProvider({ children }) {
     fetchProductsFromSelectedCollections();
   }, [selectedCollection]);
 
+  useEffect(() => {
+    console.log("Collection", deselectedCollections);
+  }, [deselectedCollections.length > 0]);
+
   const value = {
     products,
     selectedCollection,
     activeProducts,
     scheduleProducts,
     disableProducts,
+    update,
     handleAddProducts,
+    findMatchingCollectionIds,
     removeProduct,
     removeVariant,
     setProducts,
@@ -209,6 +250,7 @@ export default function SelectContextProvider({ children }) {
     removeCollection,
     setActiveProducts,
     setSales,
+    setUpdate,
   };
 
   return (

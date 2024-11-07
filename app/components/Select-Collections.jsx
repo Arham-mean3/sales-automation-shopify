@@ -5,7 +5,6 @@ import MultiCollectionSelector from "./Collection-Selector";
 
 function SelectCollections({ collections, products }) {
   const [choice, setChoice] = useState("select");
-  const [selectedId, setSelectedId] = useState(""); // Initialize as an empty string
   const [selectedCollectionProducts, setSelectedCollectionProducts] = useState(
     [],
   );
@@ -51,7 +50,6 @@ function SelectCollections({ collections, products }) {
   const handleChoiceChange = useCallback(
     (value) => {
       setChoice(value);
-      setSelectedId(""); // Reset selectedId to an empty string when choice changes
 
       if (value === "products") {
         // Show all products if "By Products" is selected

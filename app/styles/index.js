@@ -77,8 +77,14 @@ export const styles = {
   salesTag: {
     marginBottom: 0,
   },
-  conditional: {
-    width: 600,
+  titleButton: {
+    background: "none",
+    border: 0,
+    outline: "none",
+    cursor: "pointer",
+  },
+  titleText: {
+    fontWeight: "bold",
   },
   "@media (max-width: 768px)": {
     gridContainer: {

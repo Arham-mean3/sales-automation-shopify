@@ -123,10 +123,10 @@ export default function MultiCollectionSelector({ collections }) {
           <Combobox.TextField
             prefix={<Icon source={SearchIcon} />}
             onChange={updateText}
-            label="Search tags"
+            label="Collections"
             labelHidden
             value={inputValue}
-            placeholder="Search tags"
+            placeholder="Collections"
             autoComplete="off"
           />
         }

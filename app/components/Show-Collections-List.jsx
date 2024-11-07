@@ -4,7 +4,6 @@ import { PlusIcon, XIcon } from "@shopify/polaris-icons";
 import { SelectContext } from "../context/Select-Context";
 
 export default function ShowCollectionsList({ products }) {
-  // console.log("Show Selected Products", products);
 
   const {
     handleAddProducts,
@@ -12,6 +11,9 @@ export default function ShowCollectionsList({ products }) {
     removeVariant,
     products: selected,
   } = useContext(SelectContext);
+
+  console.log("Selected Products", selected)
+
 
   return (
     <div style={styles.container}>
