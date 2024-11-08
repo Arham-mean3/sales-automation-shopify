@@ -4,16 +4,15 @@ import { PlusIcon, XIcon } from "@shopify/polaris-icons";
 import { SelectContext } from "../context/Select-Context";
 
 export default function ShowCollectionsList({ products }) {
-
   const {
     handleAddProducts,
     removeProduct,
     removeVariant,
+    update,
     products: selected,
   } = useContext(SelectContext);
 
-  console.log("Selected Products", selected)
-
+  console.log("Selected Products", selected);
 
   return (
     <div style={styles.container}>
@@ -53,60 +52,112 @@ export default function ShowCollectionsList({ products }) {
       </div>
       {/* SHOW SELECTED COLLECTIONS/PRODUCTS */}
       <div style={styles.selectedContainer}>
-        {selected.length > 0 ? (
-          selected.map((selectedProduct, index) => {
-            // Find the full product data in the products list
-            const fullProductData = products.find(
-              (p) => p.id === selectedProduct.id,
-            );
+        {update
+          ? selected.map((selectedProduct, index) => {
+              // Find the full product data in the products list
+              const fullProductData = products.find(
+                (p) => p.id === selectedProduct.id,
+              );
 
-            return fullProductData ? (
-              <div key={index} style={styles.selectedWrapper}>
-                <div style={styles.selected}>
-                  {/* Display product title */}
-                  <h3 style={styles.selectedTitle}>{fullProductData.title}</h3>
-                  <Button
-                    variant="primary"
-                    icon={<Icon source={XIcon} tone="critical" />}
-                    onClick={() => removeProduct(selectedProduct.id)}
-                  >
-                    Remove
-                  </Button>
-                </div>
+              console.log("Full Product Data", fullProductData);
 
-                {selectedProduct.variants.map((variantId, index) => {
-                  // Find the variant data within the product based on variant ID
-                  const variantData = fullProductData.variants.find(
-                    (v) => v.id === variantId,
-                  );
+              return fullProductData ? (
+                <div key={index} style={styles.selectedWrapper}>
+                  <div style={styles.selected}>
+                    {/* Display product title */}
+                    <h3 style={styles.selectedTitle}>
+                      {fullProductData.title}
+                    </h3>
+                    <Button
+                      variant="primary"
+                      icon={<Icon source={XIcon} tone="critical" />}
+                      onClick={() => removeProduct(selectedProduct.id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
 
-                  return variantData ? (
-                    <div key={index} style={styles.selectedVariants}>
-                      <div style={styles.variants}>
-                        {/* Display variant title */}
-                        <h4>{variantData.title}</h4>
-                        <Button
-                          variant="primary"
-                          icon={<Icon source={XIcon} tone="critical" />}
-                          onClick={() =>
-                            removeVariant(selectedProduct.id, variantId)
-                          }
-                        >
-                          Remove Variant
-                        </Button>
+                  {selectedProduct.variants.map((variantId, index) => {
+                    // Find the variant data within the product based on variant ID
+                    const variantData = fullProductData.variants.find(
+                      (v) => v.id === variantId,
+                    );
+
+                    return variantData ? (
+                      <div key={index} style={styles.selectedVariants}>
+                        <div style={styles.variants}>
+                          {/* Display variant title */}
+                          <h4>{variantData.title}</h4>
+                          <Button
+                            variant="primary"
+                            icon={<Icon source={XIcon} tone="critical" />}
+                            onClick={() =>
+                              removeVariant(selectedProduct.id, variantId)
+                            }
+                          >
+                            Remove Variant
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-            ) : null;
-          })
-        ) : (
+                    ) : null;
+                  })}
+                </div>
+              ) : null;
+            })
+          : selected.map((selectedProduct, index) => {
+              // Find the full product data in the products list
+              const fullProductData = products.find(
+                (p) => p.id === selectedProduct.id,
+              );
+
+              return fullProductData ? (
+                <div key={index} style={styles.selectedWrapper}>
+                  <div style={styles.selected}>
+                    {/* Display product title */}
+                    <h3 style={styles.selectedTitle}>
+                      {fullProductData.title}
+                    </h3>
+                    <Button
+                      variant="primary"
+                      icon={<Icon source={XIcon} tone="critical" />}
+                      onClick={() => removeProduct(selectedProduct.id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+
+                  {selectedProduct.variants.map((variantId, index) => {
+                    // Find the variant data within the product based on variant ID
+                    const variantData = fullProductData.variants.find(
+                      (v) => v.id === variantId,
+                    );
+
+                    return variantData ? (
+                      <div key={index} style={styles.selectedVariants}>
+                        <div style={styles.variants}>
+                          {/* Display variant title */}
+                          <h4>{variantData.title}</h4>
+                          <Button
+                            variant="primary"
+                            icon={<Icon source={XIcon} tone="critical" />}
+                            onClick={() =>
+                              removeVariant(selectedProduct.id, variantId)
+                            }
+                          >
+                            Remove Variant
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+              ) : null;
+            })}
+        {selected.length > 0 && (
           <div style={styles.info}>
             <p>No Products Selected</p>
           </div>
         )}
-
         {/* SHOW SELECTED COLLECTIONS/PRODUCTS END*/}
       </div>
     </div>

@@ -579,61 +579,33 @@ export const action = async ({ request }) => {
         }
 
         // Update the sale record in the database
-        // const updateSingleSale = await prisma.sale.update({
-        //   where: { id: id },
-        //   data: {
-        //     salesValue,
-        //     salesType,
-        //     salesTitle,
-        //     saleTags,
-        //     status: newStatus,
-        //     etime,
-        //     stime,
-        //     sDate: new Date(sDate),
-        //     eDate: new Date(eDate),
-        //     products: {
-        //       // Assuming `products` is a relation field in your schema,
-        //       // this approach replaces all existing products with the new array
-        //       some: parsedProducts.map((product) => ({
-        //         pId: product.id,
-        //         variants: {
-        //           some: product.variants.map((variantId) => ({
-        //             variantId: variantId,
-        //           })),
-        //         },
-        //       })),
-        //     },
-        //   },
-        // });
         const updateSingleSale = await prisma.sale.update({
-          where: { id },
+          where: { id: id },
           data: {
             salesValue,
             salesType,
             salesTitle,
             saleTags,
-            status: newStatus, // Adjust status based on your needs
+            status: newStatus,
             etime,
             stime,
-            sDate,
-            eDate,
-            // Updating products and their variants
+            sDate: new Date(sDate),
+            eDate: new Date(eDate),
             products: {
-              connectOrCreate: products.map((product) => ({
+              connectOrCreate: parsedProducts.map((product) => ({
                 where: { pId: product.id },
-                create: {
-                  pId: product.id,
-                  variants: {
-                    connectOrCreate: product.variants.map((variantId) => ({
-                      where: { variantId: variantId },
-                      create: { variantId: variantId },
-                    })),
-                  },
+                create: { pId: product.id },
+                variants: {
+                  connectOrCreate: product.variants.map((variantId) => ({
+                    where: { variantId: variantId },
+                    create: { variantId: variantId },
+                  })),
                 },
               })),
             },
           },
         });
+
 
         return json({ success: true, sale: updateSingleSale });
       } catch (error) {
@@ -837,7 +809,7 @@ export default function Index() {
     const { matchingCollectionIds, orphanProducts } = findMatchingCollectionIds(
       data[0].products,
     );
-    console.log(matchingCollectionIds, orphanProducts);
+    console.log(matchingCollectionIds, "Orphan Products:------", orphanProducts);
     setSelectedCollection(matchingCollectionIds);
     setProducts(orphanProducts);
     setSaleTitle(value.salesTitle);
@@ -861,9 +833,11 @@ export default function Index() {
         sDate,
         eDate,
         products: JSON.stringify(products),
+        newProducts: products,
       };
       try {
-        await fetcher.submit(formData, { method: "POST" });
+        console.log("Form Data", formData);
+        // await fetcher.submit(formData, { method: "POST" });
         setShowModal(false);
         setToastMessage("Successfully Updated Sales");
         setShowToast(true);

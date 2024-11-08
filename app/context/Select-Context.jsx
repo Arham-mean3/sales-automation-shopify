@@ -23,8 +23,7 @@ const INITIAL_STATES = {
   removeProducts: (productId) => {},
   removeCollection: (collectionId) => {},
   removeVariant: (productId, variantId) => {},
-  findMatchingCollectionIds:(collection, products) =>{},
-
+  findMatchingCollectionIds: (collection, products) => {},
 };
 export const SelectContext = createContext(INITIAL_STATES);
 
@@ -139,7 +138,7 @@ export default function SelectContextProvider({ children }) {
       );
       if (collectionData && collectionData.products) {
         collectionData.products.forEach((product) => {
-          handleAddProducts(product.variants, product.id);
+          update ? [] : handleAddProducts(product.variants, product.id);
         });
       }
     });
@@ -172,27 +171,48 @@ export default function SelectContextProvider({ children }) {
     const productIdsMap = new Set(salesProduct.map((product) => product.pId));
     const matchingCollectionIds = [];
     const matchedProducts = new Set();
-  
+
     // Iterate over each collection
     for (const collection of deselectedCollections) {
-      const collectionProductIds = collection.products.map((product) => product.id);
-      const foundProducts = collectionProductIds.filter((productId) => productIdsMap.has(productId));
-  
+      const collectionProductIds = collection.products.map(
+        (product) => product.id,
+      );
+      const foundProducts = collectionProductIds.filter((productId) =>
+        productIdsMap.has(productId),
+      );
+
       // If all products in the collection are found and the collection has more than one product
-      if (foundProducts.length === collectionProductIds.length && foundProducts.length > 1) {
+      if (
+        foundProducts.length === collectionProductIds.length &&
+        foundProducts.length > 1
+      ) {
         matchingCollectionIds.push(collection.value);
         foundProducts.forEach((productId) => matchedProducts.add(productId));
       }
     }
-  
+
     // Get products that were not matched to any collection
-    const orphanProducts = salesProduct
-    .filter((product) => !matchedProducts.has(product.pId))
-    .map((product) => ({
-      id: product.pId,
-      variants: product.variants.map((variant) => variant.variantId),
-    }));  
-  
+    // const orphanProducts = salesProduct
+    //   .filter((product) => !matchedProducts.has(product.pId))
+    //   .map((product) => ({
+    //     id: product.id,
+    //     pId: product.pId,
+    //     variants: product.variants.map((variant) => ({
+    //       id: variant.id,
+    //       variantId: variant.variantId,
+    //     })),
+    //   }));
+
+    // Get all products, without filtering anything
+    const orphanProducts = salesProduct.map((product) => ({
+      id: product.id,
+      pId: product.pId,
+      variants: product.variants.map((variant) => ({
+        id: variant.id,
+        variantId: variant.variantId,
+      })),
+    }));
+
     return { matchingCollectionIds, orphanProducts };
   };
 
