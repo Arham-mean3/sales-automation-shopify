@@ -593,19 +593,20 @@ export const action = async ({ request }) => {
             eDate: new Date(eDate),
             products: {
               connectOrCreate: parsedProducts.map((product) => ({
-                where: { pId: product.id },
-                create: { pId: product.id },
-                variants: {
-                  connectOrCreate: product.variants.map((variantId) => ({
-                    where: { variantId: variantId },
-                    create: { variantId: variantId },
-                  })),
+                where: { id: product.id },
+                create: {
+                  pId: product.pId,
+                  variants: {
+                    connectOrCreate: product.variants.map((variant) => ({
+                      where: { id: variant.id },
+                      create: { variantId: variant.variantId },
+                    })),
+                  },
                 },
               })),
             },
           },
         });
-
 
         return json({ success: true, sale: updateSingleSale });
       } catch (error) {
@@ -833,11 +834,11 @@ export default function Index() {
         sDate,
         eDate,
         products: JSON.stringify(products),
-        newProducts: products,
+        // newProducts: products,
       };
       try {
-        console.log("Form Data", formData);
-        // await fetcher.submit(formData, { method: "POST" });
+        // console.log("Form Data", formData);
+        await fetcher.submit(formData, { method: "POST" });
         setShowModal(false);
         setToastMessage("Successfully Updated Sales");
         setShowToast(true);
