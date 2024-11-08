@@ -3,7 +3,7 @@
 client_id = "8c343e825a810addc543e718aa692715"
 name = "arham-test-app"
 handle = "arham-test-app"
-application_url = "https://dozens-sullivan-gained-peter.trycloudflare.com"
+application_url = "https://po-default-models-mandatory.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://dozens-sullivan-gained-peter.trycloudflare.com/auth/callback",
-  "https://dozens-sullivan-gained-peter.trycloudflare.com/auth/shopify/callback",
-  "https://dozens-sullivan-gained-peter.trycloudflare.com/api/auth/callback"
+  "https://po-default-models-mandatory.trycloudflare.com/auth/callback",
+  "https://po-default-models-mandatory.trycloudflare.com/auth/shopify/callback",
+  "https://po-default-models-mandatory.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

@@ -161,16 +161,26 @@ export default function SelectContextProvider({ children }) {
 
     // If the collection exists, gather its product IDs
     if (collectionData) {
-      const productIdsToRemove = collectionData.products.map(
-        (product) => product.id,
-      );
+      const productIdsToRemove = collectionData.products.map((product) => {
+        return product.id;
+      });
 
       // Update the products state to remove any product whose ID is in productIdsToRemove
-      setProducts((prevProducts) =>
-        prevProducts.filter(
-          (product) => !productIdsToRemove.includes(product.id),
-        ),
-      );
+      {
+        update
+          ? setProducts((prevProducts) =>
+              prevProducts.filter((product) => {
+                console.log("product Data Map Id", product.pId);
+                return !productIdsToRemove.includes(product.pId);
+              }),
+            )
+          : setProducts((prevProducts) =>
+              prevProducts.filter((product) => {
+                console.log("product Data Map Id", product.id);
+                return !productIdsToRemove.includes(product.id);
+              }),
+            );
+      }
     }
   };
 

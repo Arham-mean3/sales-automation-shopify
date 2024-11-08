@@ -62,43 +62,43 @@ function SelectCollections({ collections, products }) {
     [deselectedProducts],
   );
 
-  const handleSelectChange = useCallback(
-    (id) => {
-      setSelectedId(id);
-      if (choice === "collections") {
-        const collectionProducts = showSelectedCollectionProducts(id);
-        setSelectedCollectionProducts(collectionProducts);
-      } else if (choice === "products") {
-        const selectedProduct = showSelectedProducts(id);
-        setSelectedCollectionProducts(selectedProduct ? [selectedProduct] : []);
-      }
-    },
-    [choice],
-  );
+  // const handleSelectChange = useCallback(
+  //   (id) => {
+  //     setSelectedId(id);
+  //     if (choice === "collections") {
+  //       const collectionProducts = showSelectedCollectionProducts(id);
+  //       setSelectedCollectionProducts(collectionProducts);
+  //     } else if (choice === "products") {
+  //       const selectedProduct = showSelectedProducts(id);
+  //       setSelectedCollectionProducts(selectedProduct ? [selectedProduct] : []);
+  //     }
+  //   },
+  //   [choice],
+  // );
 
-  const showSelectedCollectionProducts = useCallback(
-    (collectionId) => {
-      const collection = deselectedCollections.find(
-        (collection) => collection.id === collectionId,
-      );
-      return collection ? collection.products : [];
-    },
-    [deselectedCollections],
-  );
+  // const showSelectedCollectionProducts = useCallback(
+  //   (collectionId) => {
+  //     const collection = deselectedCollections.find(
+  //       (collection) => collection.id === collectionId,
+  //     );
+  //     return collection ? collection.products : [];
+  //   },
+  //   [deselectedCollections],
+  // );
 
-  const showSelectedProducts = useCallback(
-    (productId) => {
-      return (
-        deselectedProducts.find((product) => product.id === productId) || null
-      );
-    },
-    [deselectedProducts],
-  );
+  // const showSelectedProducts = useCallback(
+  //   (productId) => {
+  //     return (
+  //       deselectedProducts.find((product) => product.id === productId) || null
+  //     );
+  //   },
+  //   [deselectedProducts],
+  // );
 
-  const collectionOptions = deselectedCollections.map((collection) => ({
-    label: collection.label,
-    value: collection.id,
-  }));
+  // const collectionOptions = deselectedCollections.map((collection) => ({
+  //   label: collection.label,
+  //   value: collection.id,
+  // }));
 
   return (
     <>
