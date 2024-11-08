@@ -12,7 +12,8 @@ export default function ShowCollectionsList({ products }) {
     products: selected,
   } = useContext(SelectContext);
 
-  console.log("Selected Products", selected);
+  // console.log("Selected Products", selected);
+  // console.log("Products", products)
 
   return (
     <div style={styles.container}>
@@ -22,7 +23,7 @@ export default function ShowCollectionsList({ products }) {
         {products.length > 0 ? (
           products.map((product, index) => {
             const isAdded = selected.some(
-              (selectedProduct) => selectedProduct.id === product.id,
+              (selectedProduct) => selectedProduct.pId === product.id,
             );
 
             return (
@@ -56,10 +57,8 @@ export default function ShowCollectionsList({ products }) {
           ? selected.map((selectedProduct, index) => {
               // Find the full product data in the products list
               const fullProductData = products.find(
-                (p) => p.id === selectedProduct.id,
+                (p) => p.id === selectedProduct.pId,
               );
-
-              console.log("Full Product Data", fullProductData);
 
               return fullProductData ? (
                 <div key={index} style={styles.selectedWrapper}>
@@ -77,14 +76,14 @@ export default function ShowCollectionsList({ products }) {
                     </Button>
                   </div>
 
-                  {selectedProduct.variants.map((variantId, index) => {
+                  {selectedProduct.variants.map((variant, variantIndex) => {
                     // Find the variant data within the product based on variant ID
                     const variantData = fullProductData.variants.find(
-                      (v) => v.id === variantId,
+                      (v) => v.id === variant.variantId,
                     );
 
                     return variantData ? (
-                      <div key={index} style={styles.selectedVariants}>
+                      <div key={variantIndex} style={styles.selectedVariants}>
                         <div style={styles.variants}>
                           {/* Display variant title */}
                           <h4>{variantData.title}</h4>
@@ -92,7 +91,7 @@ export default function ShowCollectionsList({ products }) {
                             variant="primary"
                             icon={<Icon source={XIcon} tone="critical" />}
                             onClick={() =>
-                              removeVariant(selectedProduct.id, variantId)
+                              removeVariant(selectedProduct.id, variant.id)
                             }
                           >
                             Remove Variant
@@ -126,14 +125,14 @@ export default function ShowCollectionsList({ products }) {
                     </Button>
                   </div>
 
-                  {selectedProduct.variants.map((variantId, index) => {
+                  {selectedProduct.variants.map((variantId, variantIndex) => {
                     // Find the variant data within the product based on variant ID
                     const variantData = fullProductData.variants.find(
                       (v) => v.id === variantId,
                     );
 
                     return variantData ? (
-                      <div key={index} style={styles.selectedVariants}>
+                      <div key={variantIndex} style={styles.selectedVariants}>
                         <div style={styles.variants}>
                           {/* Display variant title */}
                           <h4>{variantData.title}</h4>
@@ -153,11 +152,13 @@ export default function ShowCollectionsList({ products }) {
                 </div>
               ) : null;
             })}
-        {selected.length > 0 && (
+
+        {selected.length === 0 && (
           <div style={styles.info}>
             <p>No Products Selected</p>
           </div>
         )}
+
         {/* SHOW SELECTED COLLECTIONS/PRODUCTS END*/}
       </div>
     </div>

@@ -665,7 +665,7 @@ export default function Index() {
   const [error, setError] = useState(false);
 
   const salesData = fetcher.data?.sales;
-  const salesStarted = fetcher.data?.result?.saleStarted;
+  // const salesStarted = fetcher.data?.result?.saleStarted;
   const res = fetcher.data?.statusChanged;
 
   // Handle Sales Types Function
@@ -809,7 +809,7 @@ export default function Index() {
     const { matchingCollectionIds, orphanProducts } = findMatchingCollectionIds(
       data[0].products,
     );
-    console.log(matchingCollectionIds, "Orphan Products:------", orphanProducts);
+    // console.log(matchingCollectionIds, "Orphan Products:------", orphanProducts);
     setSelectedCollection(matchingCollectionIds);
     setProducts(orphanProducts);
     setSaleTitle(value.salesTitle);
@@ -848,7 +848,7 @@ export default function Index() {
     }
   };
 
-  console.log("Sale Started", salesStarted);
+  // console.log("Sale Started", salesStarted);
 
   useEffect(() => {
     setCollection(allCollection);
@@ -867,14 +867,14 @@ export default function Index() {
 
   useEffect(() => {
     if (scheduleProducts.length > 0) {
-      console.log("Schedule Products:------", scheduleProducts);
+      // console.log("Schedule Products:------", scheduleProducts);
       handleApplySales();
     }
   }, [scheduleProducts.length > 0, salesData]);
 
-  useEffect(() => {
-    console.log("Id", id);
-  }, [id]);
+  // useEffect(() => {
+  //   // console.log("Id", id);
+  // }, [id]);
 
   useEffect(() => {
     if (res) {
@@ -884,13 +884,13 @@ export default function Index() {
     }
   }, [res]);
 
-  useEffect(() => {
-    if (salesStarted) {
-      console.log("Sale Started data", allSales);
-    } else {
-      console.log("Not Sale Started data");
-    }
-  }, [salesStarted]);
+  // useEffect(() => {
+  //   if (salesStarted) {
+  //     console.log("Sale Started data", allSales);
+  //   } else {
+  //     console.log("Not Sale Started data");
+  //   }
+  // }, [salesStarted]);
 
   return (
     <Frame>

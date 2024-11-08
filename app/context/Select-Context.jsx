@@ -103,19 +103,26 @@ export default function SelectContextProvider({ children }) {
 
   const removeProduct = (productId) => {
     setProducts((prevProducts) =>
-      prevProducts.filter((product) => product.id !== productId),
+      prevProducts.filter((product) => {
+        return product.id !== productId;
+      }),
     );
   };
 
   const removeVariant = (productId, variantId) => {
     setProducts((prevProducts) => {
       // Map over the products to update the specific product
+      let updatedVariants;
       const updatedProducts = prevProducts.map((product) => {
         if (product.id === productId) {
           // Remove the variant from the product's variants
-          const updatedVariants = product.variants.filter(
-            (id) => id !== variantId,
-          );
+          update
+            ? (updatedVariants = product.variants.filter((variant) => {
+                return variant.id !== variantId;
+              }))
+            : (updatedVariants = product.variants.filter((id) => {
+                return id !== variantId;
+              }));
 
           // Return the updated product
           return {
