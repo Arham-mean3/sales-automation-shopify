@@ -100,4 +100,10 @@ export const styles = {
   titleText: {
     fontWeight: "bold",
   },
+
+  mobileTableContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
 };

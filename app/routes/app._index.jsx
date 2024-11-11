@@ -657,6 +657,7 @@ export default function Index() {
   const [toastMessage, setToastMessage] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [salesCollectionIds, setSalesCollectionIds] = useState([]);
+
   // const [updateSales, setUpdateSales] = useState(false);
   const [id, setId] = useState("");
   // Getting Data from the separate Components
@@ -887,23 +888,23 @@ export default function Index() {
     }
   }, [scheduleProducts.length > 0, salesData]);
 
-  if (res) {
-    setShowToast(true);
-    setError(false);
-    setToastMessage("Status updated successfully!");
-  }
+  // if (res) {
+  //   setShowToast(true);
+  //   setError(false);
+  //   setToastMessage("Status updated successfully!");
+  // }
 
   // useEffect(() => {
   //   // console.log("Id", id);
   // }, [id]);
 
-  // useEffect(() => {
-  //   if (res) {
-  //     setShowToast(true);
-  //     setError(false);
-  //     setToastMessage("Status updated successfully!");
-  //   }
-  // }, [res]);
+  useEffect(() => {
+    if (res) {
+      setShowToast(true);
+      setError(false);
+      setToastMessage("Status updated successfully!");
+    }
+  }, [res]);
 
   // useEffect(() => {
   //   if (salesStarted) {
@@ -963,19 +964,12 @@ export default function Index() {
               {/* ALL SALES LIST */}
 
               <div
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  gap: 20,
-                  "@media (max-width: 768px)": {
-                    flexDirection: "column",
-                  },
-                }}
+                className="w-full flex flex-col-reverse gap-10 lg:flex-row"
               >
                 {/* <SalesList /> */}
-                <div style={styles.table}>
+                <div className="flex flex-col overflow-x-auto flex-[4]">
                   {/* SALES HEADING AND BUTTON CONTAINER */}
-                  <div style={styles.salesContainer}>
+                  <div className="flex justify-between my-2">
                     <Text variant="headingXl" as="h1">
                       All Sales Listed
                     </Text>
@@ -1010,11 +1004,11 @@ export default function Index() {
                   />
                 </div>
                 {/* INFO TEXT AND TITLE */}
-                <div style={{ ...styles.info, ...styles.infoMain }}>
-                  <strong style={styles.infoTitle}>
+                <div className="flex flex-col p-4 lg:mt-14 rounded-md gap-4 bg-white w-[60%] lg:flex-1">
+                  <strong className="block text-base mb-4">
                     Boost Sales Effortlessly with Automated Discounts!
                   </strong>
-                  <p style={styles.infoText}>
+                  <p className="text-xs lg:text-sm m-0">
                     Our Shopify Sales Automation app makes it simple to manage
                     and activate sales across your store. Apply discounts to
                     individual products or entire collections with just a few
@@ -1030,22 +1024,22 @@ export default function Index() {
   );
 }
 
-export function ErrorBoundary({ error }) {
-  console.log("Something went wrong! ", error);
-  return (
-    <div style={{ width: "100%", height: "500px" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 40,
-          backgroundColor: "#ddd",
-          borderRadius: 10,
-        }}
-      >
-        <p>There is an error encountered</p>
-      </div>
-    </div>
-  );
-}
+// export function ErrorBoundary({ error }) {
+//   console.log("Something went wrong! ", error);
+//   return (
+//     <div style={{ width: "100%", height: "500px" }}>
+//       <div
+//         style={{
+//           display: "flex",
+//           justifyContent: "center",
+//           alignItems: "center",
+//           padding: 40,
+//           backgroundColor: "#ddd",
+//           borderRadius: 10,
+//         }}
+//       >
+//         <p>There is an error encountered</p>
+//       </div>
+//     </div>
+//   );
+// }

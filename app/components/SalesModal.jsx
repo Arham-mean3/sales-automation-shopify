@@ -38,7 +38,7 @@ export default function SalesModal({
   const actionFunc = updateSales ? handleUpdate : createSale
 
   return (
-    <div>
+    <div className="h-[40%]">
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
