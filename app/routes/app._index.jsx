@@ -326,18 +326,18 @@ export const action = async ({ request }) => {
         } = formData;
         const productsData = JSON.parse(products);
 
-        console.log(
-          "------------------------------",
-          salesTitle,
-          saleTags,
-          productsData,
-          salesValue,
-          sDate,
-          eDate,
-          etime,
-          stime,
-          salesType,
-        );
+        // console.log(
+        //   "------------------------------",
+        //   salesTitle,
+        //   saleTags,
+        //   productsData,
+        //   salesValue,
+        //   sDate,
+        //   eDate,
+        //   etime,
+        //   stime,
+        //   salesType,
+        // );
         // Prepare the sale data for database insertion
         const newSale = await prisma.sale.create({
           data: {
@@ -447,7 +447,10 @@ export const action = async ({ request }) => {
         }
         console.log("Current Sales", processedSaleData);
 
-        if (currentSale.status === "Active") {
+        if (
+          currentSale.status === "Active" ||
+          currentSale.status === "Schedule"
+        ) {
           const endDate = parseDate(new Date().toISOString());
           const cronExpressione = dateToCron(endDate, currentTime);
 
@@ -517,16 +520,16 @@ export const action = async ({ request }) => {
 
         // Toggle the status text
         const newStatus =
-          currentSale.status === "Active"
+          currentSale.status === "Active" || currentSale.status === "Schedule"
             ? "Disabled"
             : currentSale.status === "Disabled" && "Active";
 
         // Update the sale with the new status
-        const updateSaleStatustext = await prisma.sale.update({
+        await prisma.sale.update({
           where: { id: id },
           data: { status: newStatus },
         });
-        console.log("Updated Value", updateSaleStatustext);
+        // console.log("Updated Value", updateSaleStatustext);
         return json(
           { message: "Status Text Changed", statusChanged: true },
           { status: 201 },
@@ -573,7 +576,7 @@ export const action = async ({ request }) => {
         // Determine the new status based on the current status
         let newStatus = existingSale.status;
         if (existingSale.status === "Disabled") {
-          newStatus = "Scheduled";
+          newStatus = "Schedule";
         } else if (existingSale.status === "Active") {
           newStatus = "Schedule";
         }
@@ -608,7 +611,18 @@ export const action = async ({ request }) => {
           },
         });
 
-        return json({ success: true, sale: updateSingleSale });
+        // Fetch the updated list of all sales
+        const allSales = await prisma.sale.findMany({
+          include: {
+            products: {
+              include: {
+                variants: true,
+              },
+            },
+          },
+        });
+
+        return json({ success: true, sale: updateSingleSale, sales: allSales });
       } catch (error) {
         console.error("Error updating sale:", error);
         return json({ error: "Something went wrong!", details: error.message });
@@ -624,7 +638,7 @@ export default function Index() {
   const AllSales = JSON.parse(allSales);
   const fetcher = useFetcher();
 
-  console.log(AllSales);
+  console.log("All Sales", AllSales);
   const {
     products,
     scheduleProducts,
@@ -860,7 +874,7 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    console.log("All Sales", salesData);
+    // console.log("All Sales", salesData);
     if (salesData) {
       setSales(salesData);
     }
@@ -873,17 +887,23 @@ export default function Index() {
     }
   }, [scheduleProducts.length > 0, salesData]);
 
+  if (res) {
+    setShowToast(true);
+    setError(false);
+    setToastMessage("Status updated successfully!");
+  }
+
   // useEffect(() => {
   //   // console.log("Id", id);
   // }, [id]);
 
-  useEffect(() => {
-    if (res) {
-      setShowToast(true);
-      setError(false);
-      setToastMessage("Status updated successfully!");
-    }
-  }, [res]);
+  // useEffect(() => {
+  //   if (res) {
+  //     setShowToast(true);
+  //     setError(false);
+  //     setToastMessage("Status updated successfully!");
+  //   }
+  // }, [res]);
 
   // useEffect(() => {
   //   if (salesStarted) {
@@ -911,7 +931,7 @@ export default function Index() {
 
           {/* Sales Provider */}
           <Layout.Section>
-            <div>
+            <div style={{ width: "100%", height: "100%" }}>
               {/* Modal for displaying the content */}
               <SalesModal
                 showModal={showModal}
@@ -942,7 +962,16 @@ export default function Index() {
               />
               {/* ALL SALES LIST */}
 
-              <div style={styles.tableContainer}>
+              <div
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  gap: 20,
+                  "@media (max-width: 768px)": {
+                    flexDirection: "column",
+                  },
+                }}
+              >
                 {/* <SalesList /> */}
                 <div style={styles.table}>
                   {/* SALES HEADING AND BUTTON CONTAINER */}
@@ -968,7 +997,7 @@ export default function Index() {
 
                     {/* <Button
                       onClick={() =>
-                        deleteSale("762637ab-5bad-43dc-976a-366a17131dde")
+                        deleteSale("a5989cf7-f366-4e50-811d-df453ddad853")
                       }
                     >
                       Delete Sales
@@ -980,11 +1009,12 @@ export default function Index() {
                     updateSalesHandler={handleUpdateSale}
                   />
                 </div>
-                <div style={styles.info}>
-                  <strong>
+                {/* INFO TEXT AND TITLE */}
+                <div style={{ ...styles.info, ...styles.infoMain }}>
+                  <strong style={styles.infoTitle}>
                     Boost Sales Effortlessly with Automated Discounts!
                   </strong>
-                  <p>
+                  <p style={styles.infoText}>
                     Our Shopify Sales Automation app makes it simple to manage
                     and activate sales across your store. Apply discounts to
                     individual products or entire collections with just a few
@@ -997,5 +1027,25 @@ export default function Index() {
         </Layout>
       </Page>
     </Frame>
+  );
+}
+
+export function ErrorBoundary({ error }) {
+  console.log("Something went wrong! ", error);
+  return (
+    <div style={{ width: "100%", height: "500px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 40,
+          backgroundColor: "#ddd",
+          borderRadius: 10,
+        }}
+      >
+        <p>There is an error encountered</p>
+      </div>
+    </div>
   );
 }

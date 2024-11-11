@@ -3,7 +3,7 @@
 client_id = "8c343e825a810addc543e718aa692715"
 name = "arham-test-app"
 handle = "arham-test-app"
-application_url = "https://museums-greece-magic-permit.trycloudflare.com"
+application_url = "https://diagnostic-keywords-formal-moon.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://museums-greece-magic-permit.trycloudflare.com/auth/callback",
-  "https://museums-greece-magic-permit.trycloudflare.com/auth/shopify/callback",
-  "https://museums-greece-magic-permit.trycloudflare.com/api/auth/callback"
+  "https://diagnostic-keywords-formal-moon.trycloudflare.com/auth/callback",
+  "https://diagnostic-keywords-formal-moon.trycloudflare.com/auth/shopify/callback",
+  "https://diagnostic-keywords-formal-moon.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

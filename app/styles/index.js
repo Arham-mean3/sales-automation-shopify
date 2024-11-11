@@ -41,19 +41,33 @@ export const styles = {
   table: {
     display: "flex",
     flexDirection: "column",
-    maxWidth: "75%",
+    flex: 4,
     overflowX: "auto",
   },
   info: {
-    maxWidth: "23%",
+    flex: 1,
     backgroundColor: "white",
     padding: 10,
     borderRadius: 8,
     display: "flex",
     flexDirection: "column",
     gap: 10,
-    height: 250,
     marginTop: 54,
+  },
+  infoMain: {
+    padding: "20px",
+    margin: "20px auto",
+    height: "100%",
+  },
+  infoTitle: {
+    display: "block",
+    fontSize: "1.2em",
+    marginBottom: "10px",
+  },
+  infoText: {
+    fontSize: "1em",
+    lineHeight: "1.5",
+    margin: 0,
   },
   gridContainer: {
     display: "grid",
@@ -85,28 +99,5 @@ export const styles = {
   },
   titleText: {
     fontWeight: "bold",
-  },
-  "@media (max-width: 768px)": {
-    gridContainer: {
-      gridTemplateColumns: "1fr",
-    },
-    header: {
-      flexDirection: "column",
-      alignItems: "flex-start",
-      gap: "10px",
-    },
-    bannerContainer: {
-      width: "100%",
-      right: "auto",
-      left: "0",
-    },
-  },
-  "@media (min-width: 769px) and (max-width: 1024px)": {
-    mainContent: {
-      padding: "20px",
-    },
-    gridContainer: {
-      gridTemplateColumns: "1fr 1fr",
-    },
   },
 };

@@ -266,9 +266,9 @@ export default function SelectContextProvider({ children }) {
     fetchProductsFromSelectedCollections();
   }, [selectedCollection]);
 
-  useEffect(() => {
-    console.log("Collection", deselectedCollections);
-  }, [deselectedCollections.length > 0]);
+  // useEffect(() => {
+  //   console.log("Collection", deselectedCollections);
+  // }, [deselectedCollections.length > 0]);
 
   const value = {
     products,
