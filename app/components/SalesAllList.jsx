@@ -10,13 +10,8 @@ import {
 } from "@shopify/polaris";
 import { useState, useCallback, useMemo } from "react";
 import { calculateTimeEstimation, formatDateTime } from "../lib/utils";
-import { styles } from "../styles";
 
-export default function IndexTableWithViewsSearch({
-  data,
-  salesHandler,
-  updateSalesHandler,
-}) {
+export default function SalesTable({ data, salesHandler, updateSalesHandler }) {
   const deselectedSalesData = useMemo(() => {
     return data.map((sale) => ({
       id: sale.id,
@@ -29,15 +24,8 @@ export default function IndexTableWithViewsSearch({
       }, 0),
       timeEstimation: calculateTimeEstimation(sale.products),
       status: sale.status,
-      // products: sale.products.map((product) => ({
-      //   pId: product.pId,
-      //   variants: product.variants.map((variant) => variant.variantId),
-      // })),
     }));
   }, [JSON.stringify(data)]);
-
-  // console.log("Unselected Sales Data", data);
-  // console.log("Deselected Sales Data", deselectedSalesData);
 
   const [queryValue, setQueryValue] = useState("");
   const handleFiltersQueryChange = useCallback(
@@ -95,25 +83,31 @@ export default function IndexTableWithViewsSearch({
       >
         <IndexTable.Cell>
           <button
-            style={styles.titleButton}
+            className="bg-none outline-none border-0 cursor-pointer lg:py-4"
             onClick={(e) => {
               e.stopPropagation();
               updateSalesHandler(id);
             }}
           >
-            <p style={styles.titleText}>
+            <p>
               <span>{title}</span>
             </p>
           </button>
         </IndexTable.Cell>
         <IndexTable.Cell>
-          {length} products with {variants} variants
+          <p>
+            {length} products with {variants} variants
+          </p>
         </IndexTable.Cell>
         <IndexTable.Cell>
-          <Text>{timeEstimation} sec</Text>
+          <p>{timeEstimation}</p>
         </IndexTable.Cell>
-        <IndexTable.Cell>{sDate}</IndexTable.Cell>
-        <IndexTable.Cell>{eDate}</IndexTable.Cell>
+        <IndexTable.Cell>
+          <p>{sDate}</p>
+        </IndexTable.Cell>
+        <IndexTable.Cell>
+          <p>{eDate}</p>
+        </IndexTable.Cell>
         <IndexTable.Cell>
           {status === "Active" ? (
             <Badge progress="complete" tone="success">
@@ -147,7 +141,10 @@ export default function IndexTableWithViewsSearch({
               <Button
                 variant="primary"
                 tone="success"
-                onClick={() => salesHandler(productId)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateSalesHandler(id);
+                }}
               >
                 Active
               </Button>
@@ -185,7 +182,7 @@ export default function IndexTableWithViewsSearch({
 
   return (
     <LegacyCard>
-      <div style={{ padding: "10px 5px" }}>
+      <div style={{ padding: "20px 10px" }}>
         <TextField
           value={queryValue}
           onChange={handleFiltersQueryChange}
@@ -196,7 +193,7 @@ export default function IndexTableWithViewsSearch({
       </div>
       <div style={filteredOrders.length === 0 ? { width: 700 } : null}>
         <IndexTable
-          condensed={useBreakpoints().smDown}
+          // condensed={useBreakpoints().smDown}
           resourceName={resourceName}
           itemCount={filteredOrders.length}
           selectedItemsCount={

@@ -63,7 +63,6 @@ export default function DateAndTimePicker({
                     onFocus={() => setStartPickerVisible(true)}
                     prefix={<Icon source={CalendarIcon} />}
                     autoComplete="off"
-                    readOnly
                   />
                 }
               >
@@ -104,7 +103,6 @@ export default function DateAndTimePicker({
                     prefix={<Icon source={CalendarIcon} />}
                     onFocus={() => setEndPickerVisible(true)}
                     autoComplete="off"
-                    readOnly
                   />
                 }
               >

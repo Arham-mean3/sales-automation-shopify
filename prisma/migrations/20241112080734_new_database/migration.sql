@@ -9,6 +9,7 @@ CREATE TABLE "Sale" (
     "eDate" DATETIME NOT NULL,
     "stime" TEXT NOT NULL,
     "etime" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
@@ -16,7 +17,7 @@ CREATE TABLE "Sale" (
 -- CreateTable
 CREATE TABLE "Product" (
     "id" TEXT NOT NULL PRIMARY KEY,
-    "productId" TEXT
+    "pId" TEXT NOT NULL
 );
 
 -- CreateTable

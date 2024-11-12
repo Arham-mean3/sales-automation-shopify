@@ -9,25 +9,6 @@ function SelectCollections({ collections, products }) {
     [],
   );
 
-  const deselectedCollections = useMemo(
-    () =>
-      collections.map(({ node }) => ({
-        id: node?.id,
-        label: node?.title,
-        products:
-          node?.products?.edges?.map(({ node: productNode }) => ({
-            id: productNode?.id,
-            title: productNode?.title,
-            variants:
-              productNode?.variants?.edges?.map(({ node: variantNode }) => ({
-                id: variantNode?.id,
-                title: variantNode?.displayName,
-              })) || [],
-          })) || [],
-      })),
-    [collections],
-  );
-
   const deselectedProducts = useMemo(
     () =>
       products.map(({ node }) => ({
@@ -62,48 +43,10 @@ function SelectCollections({ collections, products }) {
     [deselectedProducts],
   );
 
-  // const handleSelectChange = useCallback(
-  //   (id) => {
-  //     setSelectedId(id);
-  //     if (choice === "collections") {
-  //       const collectionProducts = showSelectedCollectionProducts(id);
-  //       setSelectedCollectionProducts(collectionProducts);
-  //     } else if (choice === "products") {
-  //       const selectedProduct = showSelectedProducts(id);
-  //       setSelectedCollectionProducts(selectedProduct ? [selectedProduct] : []);
-  //     }
-  //   },
-  //   [choice],
-  // );
-
-  // const showSelectedCollectionProducts = useCallback(
-  //   (collectionId) => {
-  //     const collection = deselectedCollections.find(
-  //       (collection) => collection.id === collectionId,
-  //     );
-  //     return collection ? collection.products : [];
-  //   },
-  //   [deselectedCollections],
-  // );
-
-  // const showSelectedProducts = useCallback(
-  //   (productId) => {
-  //     return (
-  //       deselectedProducts.find((product) => product.id === productId) || null
-  //     );
-  //   },
-  //   [deselectedProducts],
-  // );
-
-  // const collectionOptions = deselectedCollections.map((collection) => ({
-  //   label: collection.label,
-  //   value: collection.id,
-  // }));
-
   return (
     <>
       <Select
-        label="Would you like to apply sale by products or by collections?"
+        label="Select"
         options={options}
         onChange={handleChoiceChange}
         value={choice}
@@ -117,7 +60,7 @@ function SelectCollections({ collections, products }) {
             onChange={handleSelectChange}
             value={selectedId || ""}
           /> */}
-          <MultiCollectionSelector collections={collections} /> 
+          <MultiCollectionSelector collections={collections} />
         </div>
       )}
       {choice !== "select" && choice !== "collections" && (
@@ -134,3 +77,59 @@ const styles = {
     marginTop: 20,
   },
 };
+
+// const deselectedCollections = useMemo(() =>
+//     collections.map(({ node }) => ({
+//       id: node?.id,
+//       label: node?.title,
+//       products:
+//         node?.products?.edges?.map(({ node: productNode }) => ({
+//           id: productNode?.id,
+//           title: productNode?.title,
+//           variants:
+//             productNode?.variants?.edges?.map(({ node: variantNode }) => ({
+//               id: variantNode?.id,
+//               title: variantNode?.displayName,
+//             })) || [],
+//         })) || [],
+//     })),
+//   [collections],
+// );
+
+// const handleSelectChange = useCallback(
+//   (id) => {
+//     setSelectedId(id);
+//     if (choice === "collections") {
+//       const collectionProducts = showSelectedCollectionProducts(id);
+//       setSelectedCollectionProducts(collectionProducts);
+//     } else if (choice === "products") {
+//       const selectedProduct = showSelectedProducts(id);
+//       setSelectedCollectionProducts(selectedProduct ? [selectedProduct] : []);
+//     }
+//   },
+//   [choice],
+// );
+
+// const showSelectedCollectionProducts = useCallback(
+//   (collectionId) => {
+//     const collection = deselectedCollections.find(
+//       (collection) => collection.id === collectionId,
+//     );
+//     return collection ? collection.products : [];
+//   },
+//   [deselectedCollections],
+// );
+
+// const showSelectedProducts = useCallback(
+//   (productId) => {
+//     return (
+//       deselectedProducts.find((product) => product.id === productId) || null
+//     );
+//   },
+//   [deselectedProducts],
+// );
+
+// const collectionOptions = deselectedCollections.map((collection) => ({
+//   label: collection.label,
+//   value: collection.id,
+// }));

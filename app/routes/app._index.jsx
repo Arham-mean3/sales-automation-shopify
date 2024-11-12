@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import cron from "node-cron";
-import { Page, Layout, Text, Button, Toast, Frame } from "@shopify/polaris";
+import { Page, Layout, Text, Button, Toast, Frame, BlockStack } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import {
@@ -13,10 +13,10 @@ import {
 } from "../lib/queries";
 import { dateToCron, getSingleProduct, parseDate } from "../lib/utils";
 import { styles } from "../styles";
-import IndexTableWithViewsSearch from "../components/SalesAllList";
 import SalesModal from "../components/SalesModal";
 import { SelectContext } from "../context/Select-Context";
 import prisma from "../db.server";
+import SalesTable from "../components/SalesAllList";
 
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
@@ -595,16 +595,24 @@ export const action = async ({ request }) => {
             sDate: new Date(sDate),
             eDate: new Date(eDate),
             products: {
-              connectOrCreate: parsedProducts.map((product) => ({
-                where: { id: product.id },
-                create: {
-                  pId: product.pId,
-                  variants: {
-                    connectOrCreate: product.variants.map((variant) => ({
-                      where: { id: variant.id },
-                      create: { variantId: variant.variantId },
-                    })),
-                  },
+              // connectOrCreate: parsedProducts.map((product) => ({
+              //   where: { id: product.id },
+              //   create: {
+              //     pId: product.pId,
+              //     variants: {
+              //       connectOrCreate: product.variants.map((variant) => ({
+              //         where: { id: variant.id },
+              //         create: { variantId: variant.variantId },
+              //       })),
+              //     },
+              //   },
+              // })),
+              create: parsedProducts.map((product) => ({
+                pId: product.id,
+                variants: {
+                  create: product.variants.map((variantId) => ({
+                    variantId: variantId,
+                  })),
                 },
               })),
             },
@@ -683,6 +691,10 @@ export default function Index() {
   const salesData = fetcher.data?.sales;
   // const salesStarted = fetcher.data?.result?.saleStarted;
   const res = fetcher.data?.statusChanged;
+
+  useEffect(() => {
+    console.log("All Products ", products);
+  }, [products]);
 
   // Handle Sales Types Function
   const handleSelectSalesTypeChanges = useCallback(
@@ -821,11 +833,10 @@ export default function Index() {
     const product = getSingleProduct(id, AllSales);
     const data = { ...product };
     const value = data[0];
-    console.log("Single Product fetched", value);
     const { matchingCollectionIds, orphanProducts } = findMatchingCollectionIds(
       data[0].products,
     );
-    // console.log(matchingCollectionIds, "Orphan Products:------", orphanProducts);
+    console.log("dataa---------------", data[0].products);
     setSelectedCollection(matchingCollectionIds);
     setProducts(orphanProducts);
     setSaleTitle(value.salesTitle);
@@ -858,6 +869,7 @@ export default function Index() {
         setToastMessage("Successfully Updated Sales");
         setShowToast(true);
         setError(false);
+        setProducts([]);
       } catch (error) {
         console.log("Something went wrong!", error);
       }
@@ -907,20 +919,16 @@ export default function Index() {
   }, [res]);
 
   // useEffect(() => {
-  //   if (salesStarted) {
-  //     console.log("Sale Started data", allSales);
-  //   } else {
-  //     console.log("Not Sale Started data");
-  //   }
-  // }, [salesStarted]);
+  //   setAllProducts(allProducts);
+  // }, [])
 
   return (
     <Frame>
-      <Page>
-        <TitleBar title="Remix app template"></TitleBar>
-        <Layout>
+      <div className="w-full h-screen">
+        {/* <TitleBar title="Remix app template"></TitleBar> */}
+        <div className="px-4 md:px-8 lg:px-10">
           {/* Toast Container */}
-          <Layout.Section>
+          <div>
             {showToast ? (
               <Toast
                 content={toastMessage}
@@ -928,10 +936,10 @@ export default function Index() {
                 onDismiss={() => setShowToast(false)}
               />
             ) : null}
-          </Layout.Section>
+          </div>
 
           {/* Sales Provider */}
-          <Layout.Section>
+          <div>
             <div style={{ width: "100%", height: "100%" }}>
               {/* Modal for displaying the content */}
               <SalesModal
@@ -963,9 +971,7 @@ export default function Index() {
               />
               {/* ALL SALES LIST */}
 
-              <div
-                className="w-full flex flex-col-reverse gap-10 lg:flex-row"
-              >
+              <div className="w-full flex flex-col-reverse gap-10 lg:flex-row">
                 {/* <SalesList /> */}
                 <div className="flex flex-col overflow-x-auto flex-[4]">
                   {/* SALES HEADING AND BUTTON CONTAINER */}
@@ -991,13 +997,13 @@ export default function Index() {
 
                     {/* <Button
                       onClick={() =>
-                        deleteSale("a5989cf7-f366-4e50-811d-df453ddad853")
+                        deleteSale("f762528b-7f7d-4279-a6f8-4277b643acf7")
                       }
                     >
                       Delete Sales
                     </Button> */}
                   </div>
-                  <IndexTableWithViewsSearch
+                  <SalesTable
                     data={AllSales}
                     salesHandler={handleStatus}
                     updateSalesHandler={handleUpdateSale}
@@ -1017,9 +1023,9 @@ export default function Index() {
                 </div>
               </div>
             </div>
-          </Layout.Section>
-        </Layout>
-      </Page>
+          </div>
+        </div>
+      </div>
     </Frame>
   );
 }

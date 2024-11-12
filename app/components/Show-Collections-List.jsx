@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useMemo } from "react";
 import { Button, Icon } from "@shopify/polaris";
 import { PlusIcon, XIcon } from "@shopify/polaris-icons";
 import { SelectContext } from "../context/Select-Context";
@@ -12,8 +12,7 @@ export default function ShowCollectionsList({ products }) {
     products: selected,
   } = useContext(SelectContext);
 
-  // console.log("Selected Products", selected);
-  // console.log("Products", products)
+  console.log("Selected Products", selected);
 
   return (
     <div style={styles.container}>
@@ -23,7 +22,7 @@ export default function ShowCollectionsList({ products }) {
         {products.length > 0 ? (
           products.map((product, index) => {
             const isAdded = selected.some(
-              (selectedProduct) => selectedProduct.pId === product.id,
+              (selectedProduct) => update ? selectedProduct.id === product.id : selectedProduct.id === product.id,
             );
 
             return (
@@ -57,7 +56,7 @@ export default function ShowCollectionsList({ products }) {
           ? selected.map((selectedProduct, index) => {
               // Find the full product data in the products list
               const fullProductData = products.find(
-                (p) => p.id === selectedProduct.pId,
+                (p) => p.id === selectedProduct.id,
               );
 
               return fullProductData ? (
@@ -77,10 +76,16 @@ export default function ShowCollectionsList({ products }) {
                   </div>
 
                   {selectedProduct.variants.map((variant, variantIndex) => {
+
                     // Find the variant data within the product based on variant ID
+                    // const variantData = fullProductData.variants.find(
+                    //   (v) => v.id === variant.variantId,
+                    // );
                     const variantData = fullProductData.variants.find(
-                      (v) => v.id === variant.variantId,
+                      (v) => v.id === variant,
                     );
+
+                    console.log(variantData)
 
                     return variantData ? (
                       <div key={variantIndex} style={styles.selectedVariants}>

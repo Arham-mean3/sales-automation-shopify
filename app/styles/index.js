@@ -18,7 +18,8 @@ export const styles = {
   },
   innerContainer: {
     backgroundColor: "#fff",
-    padding: 20,
+    paddingLeft: 20,
+    paddingRight: 20,
     borderRadius: 10,
     width: "100%",
     maxWidth: "800px",
@@ -32,17 +33,6 @@ export const styles = {
   },
   title: {
     marginBottom: 20,
-  },
-  tableContainer: {
-    width: "100%",
-    display: "flex",
-    gap: 20,
-  },
-  table: {
-    display: "flex",
-    flexDirection: "column",
-    flex: 4,
-    overflowX: "auto",
   },
   info: {
     flex: 1,
@@ -91,19 +81,5 @@ export const styles = {
   salesTag: {
     marginBottom: 0,
   },
-  titleButton: {
-    background: "none",
-    border: 0,
-    outline: "none",
-    cursor: "pointer",
-  },
-  titleText: {
-    fontWeight: "bold",
-  },
 
-  mobileTableContainer: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-  },
 };

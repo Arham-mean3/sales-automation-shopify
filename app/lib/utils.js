@@ -62,16 +62,25 @@ export const formatDateTime = (dateString, timeString) => {
 export const calculateTimeEstimation = (products) => {
   const timePerItem = 0.85; // Time taken per product or variant in seconds
 
-  return products.reduce((totalTime, product) => {
-    // Time for the product itself
-    const productTime = timePerItem;
+  // Calculate total variants length
+  const variantsLength = products.reduce((total, product) => total + product.variants.length, 0);
 
-    // Time for each variant
-    const variantsTime = product.variants.length * timePerItem;
+  // Total time for all products and variants
+  const totalTimeForProducts = products.length * timePerItem; // Time for products
+  const totalTimeForVariants = variantsLength * timePerItem; // Time for variants
 
-    // Total time for this product and its variants
-    return Math.floor(totalTime + productTime + variantsTime);
-  }, 0);
+  // Sum the total times for both
+  const totalTime = totalTimeForProducts + totalTimeForVariants;
+
+  // If the total time exceeds 60 seconds, convert to minutes
+  if (totalTime > 60) {
+    const minutes = Math.floor(totalTime / 60);
+    const seconds = Math.floor(totalTime % 60);
+    return `${minutes} min ${seconds} sec`;
+  }
+
+  // If the time is less than 60 seconds, return in seconds
+  return Math.floor(totalTime) + " sec";
 };
 
 export const getSingleProduct = (id, sales) => {

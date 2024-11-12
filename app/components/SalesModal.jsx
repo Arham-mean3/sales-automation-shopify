@@ -1,12 +1,12 @@
 import React from "react";
 import { SalesTypeOption } from "../lib/options";
-import { Modal, Select, TextField } from "@shopify/polaris";
+import { Icon, Modal, Select, TextField } from "@shopify/polaris";
 import { styles } from "../styles";
 import DateAndTimePicker from "./DateAndTimePicker";
-import SelectProductComp from "./MultiCombobox";
+import {
+  EditIcon
+} from '@shopify/polaris-icons';
 import SelectCollections from "./Select-Collections";
-import ShowCollectionsList from "./Show-Collections-List";
-import MultiCollectionSelector from "./Collection-Selector";
 
 export default function SalesModal({
   showModal,
@@ -33,19 +33,21 @@ export default function SalesModal({
   collections,
   handleUpdate
 }) {
-  const modelHeading = updateSales ? "Update Sales" : "Apply Sales";
-  const contentText = updateSales ? "Update Sales Now!" : "Apply Sales Now!";
+  const modelHeading = updateSales ? "Update Campaign" : "Create Campaign";
+  const contentText = updateSales ? "Update Campaign Now!" : "Create Campaign Now!";
   const actionFunc = updateSales ? handleUpdate : createSale
 
   return (
-    <div className="h-[40%]">
+    <div>
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
         title={modelHeading}
+
         primaryAction={{
           content: contentText,
           onAction: actionFunc,
+          icon: <Icon source={EditIcon} tone="base"/>
         }}
         secondaryActions={[
           {
@@ -56,15 +58,15 @@ export default function SalesModal({
         size="large"
       >
         <Modal.Section>
-          <div style={styles.relativeContainer}>
+          <div>
             {/* Main Content */}
-            <div style={styles.mainContent}>
+            <div className="flex justify-center items-center">
               <div style={styles.innerContainer}>
                 {/* SALES TITILE */}
                 <div style={styles.title}>
                   <TextField
                     type={"text"}
-                    label="Sales Title"
+                    label="Title"
                     value={salesTitle}
                     onChange={setSaleTitle}
                     placeholder="Enter the Sales Title"
@@ -73,7 +75,7 @@ export default function SalesModal({
                 {/* Sales Type and Sales Value Fields */}
                 <div style={styles.gridContainer}>
                   <Select
-                    label="Sales Type"
+                    label="Type"
                     options={SalesTypeOption}
                     onChange={handleSelectSalesTypeChanges}
                     value={salesType}
@@ -85,7 +87,7 @@ export default function SalesModal({
                         ? "number"
                         : salesType === "PERCENTAGE" && "integer"
                     }
-                    label="Sales values"
+                    label="Value"
                     value={salesValue}
                     onChange={(value) => {
                       const intValue = parseInt(value, 10);
@@ -120,10 +122,10 @@ export default function SalesModal({
                 <div style={styles.salesTag}>
                   <TextField
                     type={"text"}
-                    label="Sales Tag"
+                    label="Tag"
                     value={saleTags}
                     onChange={setSaleTags}
-                    placeholder="Enter the Sales Tag"
+                    placeholder="Enter the Tag"
                   />
                 </div>
 

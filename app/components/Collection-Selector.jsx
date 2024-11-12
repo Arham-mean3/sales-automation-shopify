@@ -116,7 +116,7 @@ export default function MultiCollectionSelector({ collections }) {
       : null;
 
   return (
-    <div style={{ height: "40px" }}>
+    <div style={{ height: "25px" }}>
       <Combobox
         allowMultiple
         activator={
@@ -126,7 +126,7 @@ export default function MultiCollectionSelector({ collections }) {
             label="Collections"
             labelHidden
             value={inputValue}
-            placeholder="Collections"
+            placeholder={selectedCollection.length > 0 ? `You have selected ${selectedCollection.length} collections` : "Collections"}
             autoComplete="off"
           />
         }
@@ -136,7 +136,7 @@ export default function MultiCollectionSelector({ collections }) {
         ) : null}
       </Combobox>
       <TextContainer>
-        <LegacyStack>{tagsMarkup}</LegacyStack>
+        {/* <div className="flex flex-wrap gap-4 mb-4 z-20">{tagsMarkup}</div> */}
       </TextContainer>
     </div>
   );

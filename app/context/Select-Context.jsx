@@ -19,6 +19,7 @@ const INITIAL_STATES = {
   setActiveProducts: () => {},
   setSales: () => {},
   setUpdate: () => {},
+  setAllProducts: () => {},
   handleAddProducts: (productVariants, productId) => {},
   removeProducts: (productId) => {},
   removeCollection: (collectionId) => {},
@@ -36,6 +37,7 @@ export default function SelectContextProvider({ children }) {
   const [disableProducts, setDisableProducts] = useState([]);
   const [sales, setSales] = useState([]);
   const [update, setUpdate] = useState(false);
+  const [allProducts, setAllProducts] = useState([]);
 
   const deselectedSalesData = useMemo(
     () =>
@@ -75,13 +77,10 @@ export default function SelectContextProvider({ children }) {
     [collection],
   );
 
-  // const salesData = deselectedSalesData.flatMap((sale) => sale.products);
-
   const handleAddProducts = (productVariants, productId) => {
     // Extract only the variant IDs
     const variantIds = productVariants.map((variant) => variant.id);
 
-    // Check if the product already exists in the products array
     setProducts((prevProducts) => {
       const existingProduct = products.find(
         (product) => product.id === productId,
@@ -207,27 +206,15 @@ export default function SelectContextProvider({ children }) {
         foundProducts.forEach((productId) => matchedProducts.add(productId));
       }
     }
-
-    // Get products that were not matched to any collection
-    // const orphanProducts = salesProduct
-    //   .filter((product) => !matchedProducts.has(product.pId))
-    //   .map((product) => ({
-    //     id: product.id,
-    //     pId: product.pId,
-    //     variants: product.variants.map((variant) => ({
-    //       id: variant.id,
-    //       variantId: variant.variantId,
-    //     })),
-    //   }));
-
     // Get all products, without filtering anything
     const orphanProducts = salesProduct.map((product) => ({
-      id: product.id,
-      pId: product.pId,
-      variants: product.variants.map((variant) => ({
-        id: variant.id,
-        variantId: variant.variantId,
-      })),
+      // id: product.id,
+      id: product.pId,
+      // variants: product.variants.map((variant) => ({
+      //   id: variant.id,
+      //   variantId: variant.variantId,
+      // })),
+      variants: product.variants.map((variant) => variant.variantId),
     }));
 
     return { matchingCollectionIds, orphanProducts };
@@ -266,9 +253,6 @@ export default function SelectContextProvider({ children }) {
     fetchProductsFromSelectedCollections();
   }, [selectedCollection]);
 
-  // useEffect(() => {
-  //   console.log("Collection", deselectedCollections);
-  // }, [deselectedCollections.length > 0]);
 
   const value = {
     products,
@@ -288,6 +272,7 @@ export default function SelectContextProvider({ children }) {
     setActiveProducts,
     setSales,
     setUpdate,
+    setAllProducts,
   };
 
   return (
