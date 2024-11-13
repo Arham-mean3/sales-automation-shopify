@@ -63,7 +63,7 @@ export default function SalesModal({
             <div className="flex justify-center items-center">
               <div style={styles.innerContainer}>
                 {/* SALES TITILE */}
-                <div style={styles.title}>
+                <div className="mb-4">
                   <TextField
                     type={"text"}
                     label="Title"
@@ -107,7 +107,7 @@ export default function SalesModal({
                   />
                 </div>
 
-                <div style={styles.productSelection}>
+                <div className="my-4">
                   <SelectCollections
                     collections={collections}
                     products={products}
@@ -119,7 +119,7 @@ export default function SalesModal({
                 </div> */}
 
                 {/* SALES TAGES HERE */}
-                <div style={styles.salesTag}>
+                <div className="mb-0">
                   <TextField
                     type={"text"}
                     label="Tag"

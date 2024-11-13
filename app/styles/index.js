@@ -18,8 +18,6 @@ export const styles = {
   },
   innerContainer: {
     backgroundColor: "#fff",
-    paddingLeft: 20,
-    paddingRight: 20,
     borderRadius: 10,
     width: "100%",
     maxWidth: "800px",

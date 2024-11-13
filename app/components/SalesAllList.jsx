@@ -3,8 +3,6 @@ import {
   IndexTable,
   LegacyCard,
   useIndexResourceState,
-  useBreakpoints,
-  Text,
   Button,
   Badge,
 } from "@shopify/polaris";
@@ -209,6 +207,7 @@ export default function SalesTable({ data, salesHandler, updateSalesHandler }) {
             { title: "Status" },
             { title: "Actions" },
           ]}
+          selectable={false}
           pagination={{
             hasNext: currentPage < totalPages - 1,
             hasPrevious: currentPage > 0,

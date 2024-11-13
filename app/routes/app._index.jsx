@@ -924,7 +924,7 @@ export default function Index() {
 
   return (
     <Frame>
-      <div className="w-full h-screen">
+      <div className="w-full h-screen bg-[#DBE2EF]">
         {/* <TitleBar title="Remix app template"></TitleBar> */}
         <div className="px-4 md:px-8 lg:px-10">
           {/* Toast Container */}

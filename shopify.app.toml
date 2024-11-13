@@ -3,7 +3,7 @@
 client_id = "8c343e825a810addc543e718aa692715"
 name = "arham-test-app"
 handle = "arham-test-app"
-application_url = "https://holly-rna-item-changelog.trycloudflare.com"
+application_url = "https://moderate-kick-lookup-expenditures.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://holly-rna-item-changelog.trycloudflare.com/auth/callback",
-  "https://holly-rna-item-changelog.trycloudflare.com/auth/shopify/callback",
-  "https://holly-rna-item-changelog.trycloudflare.com/api/auth/callback"
+  "https://moderate-kick-lookup-expenditures.trycloudflare.com/auth/callback",
+  "https://moderate-kick-lookup-expenditures.trycloudflare.com/auth/shopify/callback",
+  "https://moderate-kick-lookup-expenditures.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
