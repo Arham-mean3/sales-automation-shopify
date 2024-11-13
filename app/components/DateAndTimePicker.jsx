@@ -6,10 +6,12 @@ import {
   Popover,
   TextField,
   Icon,
+  Checkbox,
 } from "@shopify/polaris";
-import { useState, useRef } from "react";
+import { useState, useRef, useContext } from "react";
 import { CalendarIcon } from "@shopify/polaris-icons";
 import TimeSelector from "./Time"; // Ensure the import matches your file structure
+import { SelectContext } from "../context/Select-Context";
 
 export default function DateAndTimePicker({
   sDate,
@@ -20,7 +22,9 @@ export default function DateAndTimePicker({
   setStime,
   setSdate,
   setEdate,
+  disabled,
 }) {
+  const { checked, handleChange } = useContext(SelectContext);
   const [startPickerVisible, setStartPickerVisible] = useState(false);
   const [endPickerVisible, setEndPickerVisible] = useState(false);
 
@@ -63,6 +67,7 @@ export default function DateAndTimePicker({
                     onFocus={() => setStartPickerVisible(true)}
                     prefix={<Icon source={CalendarIcon} />}
                     autoComplete="off"
+                    disabled={disabled}
                   />
                 }
               >
@@ -85,49 +90,60 @@ export default function DateAndTimePicker({
                 label={"Start time"}
                 selectedTime={stime}
                 setSelectedTime={setStime}
+                disabled={disabled}
               />
             </Box>
+          </div>
+
+          <div>
+            <Checkbox
+              label="Set End Date for the Campaign."
+              checked={checked}
+              onChange={handleChange}
+            />
           </div>
 
           {/* End Date and Time Inputs */}
-          <div style={styles.row}>
-            <Box minWidth="240px" style={{ flex: 1 }}>
-              <Popover
-                active={endPickerVisible}
-                onClose={() => setEndPickerVisible(false)}
-                activator={
-                  <TextField
-                    role="combobox"
-                    label={"End date"}
-                    value={formattedEndDate}
-                    prefix={<Icon source={CalendarIcon} />}
-                    onFocus={() => setEndPickerVisible(true)}
-                    autoComplete="off"
-                  />
-                }
-              >
-                <Card ref={endDatePickerRef}>
-                  <DatePicker
-                    month={eDate.getMonth()}
-                    year={eDate.getFullYear()}
-                    selected={eDate}
-                    onMonthChange={(month, year) => {
-                      setEdate(new Date(year, month, 1));
-                    }}
-                    onChange={handleEndDateSelection}
-                  />
-                </Card>
-              </Popover>
-            </Box>
+          {checked && (
+            <div style={styles.row}>
+              <Box minWidth="240px" style={{ flex: 1 }}>
+                <Popover
+                  active={endPickerVisible}
+                  onClose={() => setEndPickerVisible(false)}
+                  activator={
+                    <TextField
+                      role="combobox"
+                      label={"End date"}
+                      value={formattedEndDate}
+                      prefix={<Icon source={CalendarIcon} />}
+                      onFocus={() => setEndPickerVisible(true)}
+                      autoComplete="off"
+                    />
+                  }
+                >
+                  <Card ref={endDatePickerRef}>
+                    <DatePicker
+                      month={eDate.getMonth()}
+                      year={eDate.getFullYear()}
+                      selected={eDate}
+                      onMonthChange={(month, year) => {
+                        setEdate(new Date(year, month, 1));
+                      }}
+                      onChange={handleEndDateSelection}
+                    />
+                  </Card>
+                </Popover>
+              </Box>
 
-            <Box minWidth="240px" style={{ flex: 1 }}>
-              <TimeSelector
-                label={"End time"}
-                selectedTime={etime}
-                setSelectedTime={setEtime}
-              />
-            </Box>
-          </div>
+              <Box minWidth="240px" style={{ flex: 1 }}>
+                <TimeSelector
+                  label={"End time"}
+                  selectedTime={etime}
+                  setSelectedTime={setEtime}
+                />
+              </Box>
+            </div>
+          )}
         </div>
       </div>
     </BlockStack>

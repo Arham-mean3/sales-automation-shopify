@@ -1,10 +1,10 @@
 import {
   TextField,
   IndexTable,
-  LegacyCard,
   useIndexResourceState,
   Button,
   Badge,
+  Card,
 } from "@shopify/polaris";
 import { useState, useCallback, useMemo } from "react";
 import { calculateTimeEstimation, formatDateTime } from "../lib/utils";
@@ -88,23 +88,23 @@ export default function SalesTable({ data, salesHandler, updateSalesHandler }) {
             }}
           >
             <p>
-              <span>{title}</span>
+              <span className="text-xs lg:text-sm">{title}</span>
             </p>
           </button>
         </IndexTable.Cell>
         <IndexTable.Cell>
-          <p>
+          <p className="text-xs lg:text-sm">
             {length} products with {variants} variants
           </p>
         </IndexTable.Cell>
         <IndexTable.Cell>
-          <p>{timeEstimation}</p>
+          <p className="text-xs lg:text-sm">{timeEstimation}</p>
         </IndexTable.Cell>
         <IndexTable.Cell>
-          <p>{sDate}</p>
+          <p className="text-xs lg:text-sm">{sDate}</p>
         </IndexTable.Cell>
         <IndexTable.Cell>
-          <p>{eDate}</p>
+          <p className="text-xs lg:text-sm">{eDate}</p>
         </IndexTable.Cell>
         <IndexTable.Cell>
           {status === "Active" ? (
@@ -179,8 +179,8 @@ export default function SalesTable({ data, salesHandler, updateSalesHandler }) {
   };
 
   return (
-    <LegacyCard>
-      <div style={{ padding: "20px 10px" }}>
+    <Card>
+      <div style={{ padding: "20px 0px" }}>
         <TextField
           value={queryValue}
           onChange={handleFiltersQueryChange}
@@ -218,6 +218,6 @@ export default function SalesTable({ data, salesHandler, updateSalesHandler }) {
           {rowMarkup}
         </IndexTable>
       </div>
-    </LegacyCard>
+    </Card>
   );
 }

@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import ShowCollectionsList from "./Show-Collections-List";
 import MultiCollectionSelector from "./Collection-Selector";
 
-function SelectCollections({ collections, products }) {
+function SelectCollections({ collections, products, disabled }) {
   const [choice, setChoice] = useState("select");
   const [selectedCollectionProducts, setSelectedCollectionProducts] = useState(
     [],
@@ -50,6 +50,7 @@ function SelectCollections({ collections, products }) {
         options={options}
         onChange={handleChoiceChange}
         value={choice}
+        disabled={disabled}
       />
 
       {choice === "collections" && (

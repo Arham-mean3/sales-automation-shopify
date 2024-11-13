@@ -1,18 +1,17 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import cron from "node-cron";
-import { Page, Layout, Text, Button, Toast, Frame, BlockStack } from "@shopify/polaris";
-import { TitleBar } from "@shopify/app-bridge-react";
+import { Text, Button, Toast, Frame } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import {
   getAllCollections,
   getAllProductsQuery,
+  getCurrencyCode,
   getProductsQuery,
   updateProductVariantsPrice,
 } from "../lib/queries";
 import { dateToCron, getSingleProduct, parseDate } from "../lib/utils";
-import { styles } from "../styles";
 import SalesModal from "../components/SalesModal";
 import { SelectContext } from "../context/Select-Context";
 import prisma from "../db.server";
@@ -47,11 +46,18 @@ export const loader = async ({ request }) => {
     },
   });
 
+  const currencyCodeResponse = await admin.graphql(
+    `#graphql
+    ${getCurrencyCode}
+    `,
+  );
+
   const sessions = await prisma.session.findMany();
 
   const data = await response.json();
   const productsData = await newResponse.json();
   const collections = await collectionResponse.json();
+  const currencyCode = await currencyCodeResponse.json();
 
   return json({
     products: data.data.products.edges,
@@ -59,6 +65,7 @@ export const loader = async ({ request }) => {
     allCollection: collections.data.collections.edges,
     allSales: JSON.stringify(allSales),
     sessions: sessions,
+    currencyCode: currencyCode.data.shop.currencyCode,
   });
 };
 
@@ -161,6 +168,14 @@ export const action = async ({ request }) => {
                     newPrice = originalPrice * (1 - discountPercentage);
 
                     console.log("Discounted New Price", newPrice);
+                  } else if (salesType === "FIXED-AMOUNT") {
+                    const fixedAmountValue = parseFloat(salesValue);
+                    newPrice = originalPrice - fixedAmountValue;
+
+                    console.log(
+                      "Fixed Amount Discount Value New Price",
+                      newPrice,
+                    );
                   }
 
                   const productSaleUpdate = await admin.graphql(
@@ -564,49 +579,79 @@ export const action = async ({ request }) => {
 
         console.log("Updating Products", parsedProducts);
 
-        const existingSale = await prisma.sale.findUnique({
-          where: { id: id },
-          select: { status: true },
-        });
+        // const existingSale = await prisma.sale.findUnique({
+        //   where: { id: id },
+        //   select: { status: true },
+        // });
 
-        if (!existingSale) {
-          return json({ error: "Sale not found!" });
-        }
+        // if (!existingSale) {
+        //   return json({ error: "Sale not found!" });
+        // }
 
-        // Determine the new status based on the current status
-        let newStatus = existingSale.status;
-        if (existingSale.status === "Disabled") {
-          newStatus = "Schedule";
-        } else if (existingSale.status === "Active") {
-          newStatus = "Schedule";
-        }
+        // // Determine the new status based on the current status
+        // let newStatus = existingSale.status;
+        // if (existingSale.status === "Disabled") {
+        //   newStatus = "Schedule";
+        // } else if (existingSale.status === "Active") {
+        //   newStatus = "Schedule";
+        // }
 
         // Update the sale record in the database
-        const updateSingleSale = await prisma.sale.update({
-          where: { id: id },
+        // const updateSingleSale = await prisma.sale.update({
+        //   where: { id: id },
+        //   data: {
+        //     salesValue,
+        //     salesType,
+        //     salesTitle,
+        //     saleTags,
+        //     status: newStatus,
+        //     etime,
+        //     stime,
+        //     sDate: new Date(sDate),
+        //     eDate: new Date(eDate),
+        //     products: {
+        //       // connectOrCreate: parsedProducts.map((product) => ({
+        //       //   where: { id: product.id },
+        //       //   create: {
+        //       //     pId: product.pId,
+        //       //     variants: {
+        //       //       connectOrCreate: product.variants.map((variant) => ({
+        //       //         where: { id: variant.id },
+        //       //         create: { variantId: variant.variantId },
+        //       //       })),
+        //       //     },
+        //       //   },
+        //       // })),
+        //       create: parsedProducts.map((product) => ({
+        //         pId: product.id,
+        //         variants: {
+        //           create: product.variants.map((variantId) => ({
+        //             variantId: variantId,
+        //           })),
+        //         },
+        //       })),
+        //     },
+        //   },
+        // });
+
+        await prisma.sale.delete({
+          where: {
+            id: id, // The unique ID of the sale to delete
+          },
+        });
+
+        const updateSingleSale = await prisma.sale.create({
           data: {
-            salesValue,
-            salesType,
-            salesTitle,
-            saleTags,
-            status: newStatus,
-            etime,
-            stime,
-            sDate: new Date(sDate),
-            eDate: new Date(eDate),
+            salesType: salesType,
+            saleTags: saleTags,
+            salesTitle: salesTitle,
+            salesValue: salesValue,
+            sDate: new Date(sDate), // Ensure sDate is a Date object
+            eDate: new Date(eDate), // Ensure eDate is a Date object
+            stime: stime,
+            etime: etime,
+            status: "Schedule",
             products: {
-              // connectOrCreate: parsedProducts.map((product) => ({
-              //   where: { id: product.id },
-              //   create: {
-              //     pId: product.pId,
-              //     variants: {
-              //       connectOrCreate: product.variants.map((variant) => ({
-              //         where: { id: variant.id },
-              //         create: { variantId: variant.variantId },
-              //       })),
-              //     },
-              //   },
-              // })),
               create: parsedProducts.map((product) => ({
                 pId: product.id,
                 variants: {
@@ -635,6 +680,24 @@ export const action = async ({ request }) => {
         console.error("Error updating sale:", error);
         return json({ error: "Something went wrong!", details: error.message });
       }
+    case "EXTEND_SALES_END_TIME":
+      try {
+        const { id, eDate, etime } = formData;
+
+        console.log(id, eDate, etime);
+        
+        const updated = await prisma.sale.update({
+          where: { id: id },
+          data: { eDate: new Date(eDate), etime: etime },
+        });
+        console.log("Updated", updated)
+        return json(
+          { message: "Successfully Campaign Time Extended", success: true },
+          { status: "201" },
+        );
+      } catch (error) {
+        return json({ error: "Something went wrong!", details: error.message });
+      }
 
     default:
       break;
@@ -642,7 +705,8 @@ export const action = async ({ request }) => {
 };
 
 export default function Index() {
-  const { allProducts, allCollection, allSales } = useLoaderData();
+  const { allProducts, allCollection, allSales, currencyCode } =
+    useLoaderData();
   const AllSales = JSON.parse(allSales);
   const fetcher = useFetcher();
 
@@ -666,6 +730,8 @@ export default function Index() {
   const [showModal, setShowModal] = useState(false);
   const [salesCollectionIds, setSalesCollectionIds] = useState([]);
 
+  let code = currencyCode;
+
   // const [updateSales, setUpdateSales] = useState(false);
   const [id, setId] = useState("");
   // Getting Data from the separate Components
@@ -683,6 +749,9 @@ export default function Index() {
   const [eDate, setEdate] = useState(
     new Date(new Date().setDate(new Date().getDate() + 2)),
   );
+
+  const [isDisable, setIsDisable] = useState(false);
+  const [isScheduled, setIsScheduled] = useState(false);
   //----- Date ---- Date
 
   // error----- setError
@@ -691,6 +760,15 @@ export default function Index() {
   const salesData = fetcher.data?.sales;
   // const salesStarted = fetcher.data?.result?.saleStarted;
   const res = fetcher.data?.statusChanged;
+
+  const deselectedSalesData = useMemo(() => {
+    return AllSales.map((sale) => ({
+      id: sale.id,
+      status: sale.status,
+    }));
+  }, [AllSales]);
+
+  console.log("Sale Data for sales data", deselectedSalesData);
 
   useEffect(() => {
     console.log("All Products ", products);
@@ -833,6 +911,15 @@ export default function Index() {
     const product = getSingleProduct(id, AllSales);
     const data = { ...product };
     const value = data[0];
+    // Finding if any status has an active status or not
+    if (value.status === "Active") {
+      setIsDisable(true);
+    }
+
+    if (value.status === "Schedule") {
+      setIsScheduled(true);
+    }
+    // Getting the data if there is any collection or not
     const { matchingCollectionIds, orphanProducts } = findMatchingCollectionIds(
       data[0].products,
     );
@@ -876,7 +963,21 @@ export default function Index() {
     }
   };
 
-  // console.log("Sale Started", salesStarted);
+  const handleExtendTime = async () => {
+    console.log("Extended Time of Sale", id);
+    const formData = {
+      actionKey: "EXTEND_SALES_END_TIME",
+      id,
+      eDate,
+      etime,
+    };
+    console.log(formData)
+    try {
+      await fetcher.submit(formData, { method: "POST" });
+    } catch (error) {
+      console.log("Something Went Wrong!");
+    }
+  };
 
   useEffect(() => {
     setCollection(allCollection);
@@ -924,7 +1025,7 @@ export default function Index() {
 
   return (
     <Frame>
-      <div className="w-full h-screen bg-[#DBE2EF]">
+      <div className="w-full h-full bg-[#DCE4C9]">
         {/* <TitleBar title="Remix app template"></TitleBar> */}
         <div className="px-4 md:px-8 lg:px-10">
           {/* Toast Container */}
@@ -943,6 +1044,8 @@ export default function Index() {
             <div style={{ width: "100%", height: "100%" }}>
               {/* Modal for displaying the content */}
               <SalesModal
+                isScheduled={isScheduled}
+                isDisable={isDisable}
                 showModal={showModal}
                 salesType={salesType}
                 salesValue={salesValue}
@@ -956,6 +1059,7 @@ export default function Index() {
                 collections={allCollection}
                 salesCollectionIds={salesCollectionIds}
                 updateSales={update}
+                code={code}
                 setStime={setStime}
                 setEtime={setEtime}
                 createSale={createSale}
@@ -968,6 +1072,7 @@ export default function Index() {
                 setSaleTags={setSaleTags}
                 setSaleTitle={setSaleTitle}
                 setSalesCollectionIds={setSalesCollectionIds}
+                handleExtendTime={handleExtendTime}
               />
               {/* ALL SALES LIST */}
 
@@ -975,7 +1080,7 @@ export default function Index() {
                 {/* <SalesList /> */}
                 <div className="flex flex-col overflow-x-auto flex-[4]">
                   {/* SALES HEADING AND BUTTON CONTAINER */}
-                  <div className="flex justify-between my-2">
+                  <div className="flex justify-between mb-4 lg:my-6">
                     <Text variant="headingXl" as="h1">
                       All Sales Listed
                     </Text>
@@ -995,13 +1100,13 @@ export default function Index() {
                       Create Sales
                     </Button>
 
-                    {/* <Button
+                    <Button
                       onClick={() =>
-                        deleteSale("f762528b-7f7d-4279-a6f8-4277b643acf7")
+                        deleteSale("1a3f4857-fbc8-4370-b696-aad169588bcf")
                       }
                     >
                       Delete Sales
-                    </Button> */}
+                    </Button>
                   </div>
                   <SalesTable
                     data={AllSales}
@@ -1010,16 +1115,19 @@ export default function Index() {
                   />
                 </div>
                 {/* INFO TEXT AND TITLE */}
-                <div className="flex flex-col p-4 lg:mt-14 rounded-md gap-4 bg-white w-[60%] lg:flex-1">
-                  <strong className="block text-base mb-4">
-                    Boost Sales Effortlessly with Automated Discounts!
-                  </strong>
-                  <p className="text-xs lg:text-sm m-0">
-                    Our Shopify Sales Automation app makes it simple to manage
-                    and activate sales across your store. Apply discounts to
-                    individual products or entire collections with just a few
-                    clicks.
-                  </p>
+
+                <div className="flex flex-col mt-4 lg:mt-20 gap-4 w-[60%] lg:flex-1">
+                  <div className="p-4 bg-white rounded-md flex flex-col items-center">
+                    <strong className="block text-base mb-4">
+                      Boost Sales Effortlessly with Automated Discounts!
+                    </strong>
+                    <p className="text-xs lg:text-sm m-0">
+                      Our Shopify Sales Automation app makes it simple to manage
+                      and activate sales across your store. Apply discounts to
+                      individual products or entire collections with just a few
+                      clicks.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

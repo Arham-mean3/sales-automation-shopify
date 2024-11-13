@@ -152,3 +152,11 @@ query collectionInfo {
   }
 }
 `;
+
+export const getCurrencyCode = `
+query ShopMetafield {
+  shop {
+    currencyCode
+  }
+}
+`;

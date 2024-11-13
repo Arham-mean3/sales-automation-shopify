@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Listbox, Combobox, Icon } from "@shopify/polaris";
 import { CalendarTimeIcon } from "@shopify/polaris-icons";
 
-export default function TimeSelector({ selectedTime, setSelectedTime, label }) {
+export default function TimeSelector({ selectedTime, setSelectedTime, label, disabled }) {
   const generateTimeSlots = useCallback(() => {
     const times = [];
     for (let hour = 0; hour < 24; hour++) {
@@ -104,6 +104,7 @@ export default function TimeSelector({ selectedTime, setSelectedTime, label }) {
             value={inputValue}
             placeholder={label}
             autoComplete="off"
+            disabled={disabled}
           />
         }
       >

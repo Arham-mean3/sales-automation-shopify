@@ -17,7 +17,6 @@ export const styles = {
     width: "100%",
   },
   innerContainer: {
-    backgroundColor: "#fff",
     borderRadius: 10,
     width: "100%",
     maxWidth: "800px",

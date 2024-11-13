@@ -13,13 +13,14 @@ const INITIAL_STATES = {
   disableProducts: [],
   scheduleProducts: [],
   update: true,
+  checked: false,
   setProducts: () => {},
   setCollection: () => {},
   setSelectedCollection: () => {},
   setActiveProducts: () => {},
   setSales: () => {},
   setUpdate: () => {},
-  setAllProducts: () => {},
+  handleChange: (newChecked) => {},
   handleAddProducts: (productVariants, productId) => {},
   removeProducts: (productId) => {},
   removeCollection: (collectionId) => {},
@@ -37,7 +38,9 @@ export default function SelectContextProvider({ children }) {
   const [disableProducts, setDisableProducts] = useState([]);
   const [sales, setSales] = useState([]);
   const [update, setUpdate] = useState(false);
-  const [allProducts, setAllProducts] = useState([]);
+  const [checked, setChecked] = useState(false);
+
+  const handleChange = useCallback((newChecked) => setChecked(newChecked), []);
 
   const deselectedSalesData = useMemo(
     () =>
@@ -253,7 +256,6 @@ export default function SelectContextProvider({ children }) {
     fetchProductsFromSelectedCollections();
   }, [selectedCollection]);
 
-
   const value = {
     products,
     selectedCollection,
@@ -261,6 +263,7 @@ export default function SelectContextProvider({ children }) {
     scheduleProducts,
     disableProducts,
     update,
+    checked,
     handleAddProducts,
     findMatchingCollectionIds,
     removeProduct,
@@ -272,7 +275,7 @@ export default function SelectContextProvider({ children }) {
     setActiveProducts,
     setSales,
     setUpdate,
-    setAllProducts,
+    handleChange
   };
 
   return (

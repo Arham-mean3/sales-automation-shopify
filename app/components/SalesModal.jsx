@@ -1,11 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { SalesTypeOption } from "../lib/options";
 import { Icon, Modal, Select, TextField } from "@shopify/polaris";
 import { styles } from "../styles";
 import DateAndTimePicker from "./DateAndTimePicker";
-import {
-  EditIcon
-} from '@shopify/polaris-icons';
+import { EditIcon } from "@shopify/polaris-icons";
 import SelectCollections from "./Select-Collections";
 
 export default function SalesModal({
@@ -19,6 +17,8 @@ export default function SalesModal({
   stime,
   eDate,
   sDate,
+  isScheduled,
+  isDisable,
   updateSales,
   setStime,
   setEtime,
@@ -31,11 +31,23 @@ export default function SalesModal({
   setSaleTitle,
   setSaleTags,
   collections,
-  handleUpdate
+  handleUpdate,
+  code,
+  handleExtendTime
 }) {
+  const handleExtend = () => {};
+
   const modelHeading = updateSales ? "Update Campaign" : "Create Campaign";
-  const contentText = updateSales ? "Update Campaign Now!" : "Create Campaign Now!";
-  const actionFunc = updateSales ? handleUpdate : createSale
+  const contentText = isDisable
+    ? "Extend the Campaign!"
+    : updateSales
+      ? "Update Campaign Now!"
+      : "Create Campaign Now!";
+  const actionFunc = isDisable
+    ? handleExtendTime
+    : updateSales
+      ? handleUpdate
+      : createSale;
 
   return (
     <div>
@@ -43,11 +55,10 @@ export default function SalesModal({
         open={showModal}
         onClose={() => setShowModal(false)}
         title={modelHeading}
-
         primaryAction={{
           content: contentText,
           onAction: actionFunc,
-          icon: <Icon source={EditIcon} tone="base"/>
+          icon: <Icon source={EditIcon} tone="base" />,
         }}
         secondaryActions={[
           {
@@ -58,7 +69,7 @@ export default function SalesModal({
         size="large"
       >
         <Modal.Section>
-          <div>
+          <div className="m-0 p-0">
             {/* Main Content */}
             <div className="flex justify-center items-center">
               <div style={styles.innerContainer}>
@@ -70,6 +81,7 @@ export default function SalesModal({
                     value={salesTitle}
                     onChange={setSaleTitle}
                     placeholder="Enter the Sales Title"
+                    disabled={isDisable}
                   />
                 </div>
                 {/* Sales Type and Sales Value Fields */}
@@ -79,6 +91,7 @@ export default function SalesModal({
                     options={SalesTypeOption}
                     onChange={handleSelectSalesTypeChanges}
                     value={salesType}
+                    disabled={isDisable}
                   />
 
                   <TextField
@@ -101,16 +114,19 @@ export default function SalesModal({
                     }}
                     prefix={
                       salesType === "FIXED-AMOUNT"
-                        ? "$"
+                        ? code
                         : salesType === "PERCENTAGE" && "%"
                     }
+                    disabled={isScheduled}
                   />
                 </div>
 
+                {/* SELECTION CONTAINER */}
                 <div className="my-4">
                   <SelectCollections
                     collections={collections}
                     products={products}
+                    disabled={isDisable}
                   />
                 </div>
 
@@ -126,6 +142,7 @@ export default function SalesModal({
                     value={saleTags}
                     onChange={setSaleTags}
                     placeholder="Enter the Tag"
+                    disabled={isDisable}
                   />
                 </div>
 
@@ -140,6 +157,7 @@ export default function SalesModal({
                     setEtime={setEtime}
                     setSdate={setSdate}
                     setEdate={setEdate}
+                    disabled={isDisable}
                   />
                 </div>
               </div>

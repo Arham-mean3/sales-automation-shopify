@@ -1,26 +1,15 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "8c343e825a810addc543e718aa692715"
+application_url = "https://nutten-fill-input-ss.trycloudflare.com"
+embedded = true
 name = "arham-test-app"
 handle = "arham-test-app"
-application_url = "https://moderate-kick-lookup-expenditures.trycloudflare.com"
-embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
 dev_store_url = "store-for-customer-account-test.myshopify.com"
 include_config_on_deploy = true
-
-[access_scopes]
-# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products"
-
-[auth]
-redirect_urls = [
-  "https://moderate-kick-lookup-expenditures.trycloudflare.com/auth/callback",
-  "https://moderate-kick-lookup-expenditures.trycloudflare.com/auth/shopify/callback",
-  "https://moderate-kick-lookup-expenditures.trycloudflare.com/api/auth/callback"
-]
 
 [webhooks]
 api_version = "2024-10"
@@ -40,6 +29,17 @@ api_version = "2024-10"
   [[webhooks.subscriptions]]
   topics = [ "app/uninstalled" ]
   uri = "/webhooks/app/uninstalled"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_products"
+
+[auth]
+redirect_urls = [
+  "https://nutten-fill-input-ss.trycloudflare.com/auth/callback",
+  "https://nutten-fill-input-ss.trycloudflare.com/auth/shopify/callback",
+  "https://nutten-fill-input-ss.trycloudflare.com/api/auth/callback"
+]
 
 [pos]
 embedded = false
