@@ -685,12 +685,12 @@ export const action = async ({ request }) => {
         const { id, eDate, etime } = formData;
 
         console.log(id, eDate, etime);
-        
+
         const updated = await prisma.sale.update({
           where: { id: id },
           data: { eDate: new Date(eDate), etime: etime },
         });
-        console.log("Updated", updated)
+        console.log("Updated", updated);
         return json(
           { message: "Successfully Campaign Time Extended", success: true },
           { status: "201" },
@@ -971,7 +971,7 @@ export default function Index() {
       eDate,
       etime,
     };
-    console.log(formData)
+    console.log(formData);
     try {
       await fetcher.submit(formData, { method: "POST" });
     } catch (error) {
@@ -1081,32 +1081,33 @@ export default function Index() {
                 <div className="flex flex-col overflow-x-auto flex-[4]">
                   {/* SALES HEADING AND BUTTON CONTAINER */}
                   <div className="flex justify-between mb-4 lg:my-6">
-                    <Text variant="headingXl" as="h1">
-                      All Sales Listed
-                    </Text>
+                    <h1 className="text-xl lg:text-2xl font-bold">All Sales Listed</h1>
+                    <div className="flex justify-center items-center gap-4">
+                      <Button
+                        variant="primary"
+                        onClick={() => {
+                          setProducts([]);
+                          setSelectedCollection([]);
+                          setSaleTitle("");
+                          setSalesValue("");
+                          setSaleTags("");
+                          setUpdate(false);
+                          setShowModal(true);
+                        }}
+                        primary
+                      >
+                        Create Campaign
+                      </Button>
 
-                    <Button
-                      onClick={() => {
-                        setProducts([]);
-                        setSelectedCollection([]);
-                        setSaleTitle("");
-                        setSalesValue("");
-                        setSaleTags("");
-                        setUpdate(false);
-                        setShowModal(true);
-                      }}
-                      primary
-                    >
-                      Create Sales
-                    </Button>
-
-                    <Button
-                      onClick={() =>
-                        deleteSale("1a3f4857-fbc8-4370-b696-aad169588bcf")
-                      }
-                    >
-                      Delete Sales
-                    </Button>
+                      <Button
+                        tone="critical"
+                        onClick={() =>
+                          deleteSale("71ca4748-d9e8-46f0-a616-5c277994db12")
+                        }
+                      >
+                        Delete Campaign
+                      </Button>
+                    </div>
                   </div>
                   <SalesTable
                     data={AllSales}

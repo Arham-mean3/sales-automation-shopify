@@ -39,8 +39,8 @@ export default function SalesTable({ data, salesHandler, updateSalesHandler }) {
   );
 
   const resourceName = {
-    singular: "sale",
-    plural: "sales",
+    singular: "campaign",
+    plural: "campaign",
   };
 
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
@@ -179,19 +179,18 @@ export default function SalesTable({ data, salesHandler, updateSalesHandler }) {
   };
 
   return (
-    <Card>
-      <div style={{ padding: "20px 0px" }}>
+    <Card background="avatar-bg-fill">
+      <div className="py-5">
         <TextField
           value={queryValue}
           onChange={handleFiltersQueryChange}
-          placeholder="Search Sales"
+          placeholder="Search Campaign"
           clearButton
           onClearButtonClick={handleQueryValueRemove}
         />
       </div>
-      <div style={filteredOrders.length === 0 ? { width: 700 } : null}>
+      <div style={filteredOrders.length === 0 ? null : null}>
         <IndexTable
-          // condensed={useBreakpoints().smDown}
           resourceName={resourceName}
           itemCount={filteredOrders.length}
           selectedItemsCount={
