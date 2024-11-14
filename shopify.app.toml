@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "8c343e825a810addc543e718aa692715"
-application_url = "https://expensive-supply-checks-today.trycloudflare.com"
+application_url = "https://societies-matrix-islands-informational.trycloudflare.com"
 embedded = true
 name = "arham-test-app"
 handle = "arham-test-app"
@@ -32,13 +32,13 @@ api_version = "2024-10"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products"
+scopes = "read_shopify_payments_accounts,write_products"
 
 [auth]
 redirect_urls = [
-  "https://expensive-supply-checks-today.trycloudflare.com/auth/callback",
-  "https://expensive-supply-checks-today.trycloudflare.com/auth/shopify/callback",
-  "https://expensive-supply-checks-today.trycloudflare.com/api/auth/callback"
+  "https://societies-matrix-islands-informational.trycloudflare.com/auth/callback",
+  "https://societies-matrix-islands-informational.trycloudflare.com/auth/shopify/callback",
+  "https://societies-matrix-islands-informational.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

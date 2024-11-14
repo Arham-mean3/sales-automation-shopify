@@ -3,7 +3,7 @@ import { Button, Icon } from "@shopify/polaris";
 import { PlusIcon, XIcon } from "@shopify/polaris-icons";
 import { SelectContext } from "../context/Select-Context";
 
-export default function ShowCollectionsList({ products }) {
+export default function ShowCollectionsList({ products, disable }) {
   const {
     handleAddProducts,
     removeProduct,
@@ -21,8 +21,10 @@ export default function ShowCollectionsList({ products }) {
         {/* SELECT PRODUCTS */}
         {products.length > 0 ? (
           products.map((product, index) => {
-            const isAdded = selected.some(
-              (selectedProduct) => update ? selectedProduct.id === product.id : selectedProduct.id === product.id,
+            const isAdded = selected.some((selectedProduct) =>
+              update
+                ? selectedProduct.id === product.id
+                : selectedProduct.id === product.id,
             );
 
             return (
@@ -30,16 +32,18 @@ export default function ShowCollectionsList({ products }) {
                 <div style={styles.wrapperInsider}>
                   <h4 style={styles.title}>{product.title}</h4>
                 </div>
-                <Button
-                  variant="primary"
-                  icon={<Icon source={PlusIcon} tone="base" />}
-                  onClick={() =>
-                    handleAddProducts(product.variants, product.id)
-                  }
-                  disabled={isAdded}
-                >
-                  {isAdded ? "Added" : "Add"}
-                </Button>
+                {disable ? null : (
+                  <Button
+                    variant="primary"
+                    icon={<Icon source={PlusIcon} tone="base" />}
+                    onClick={() =>
+                      handleAddProducts(product.variants, product.id)
+                    }
+                    disabled={isAdded}
+                  >
+                    {isAdded ? "Added" : "Add"}
+                  </Button>
+                )}
               </div>
             );
           })
@@ -66,17 +70,18 @@ export default function ShowCollectionsList({ products }) {
                     <h3 style={styles.selectedTitle}>
                       {fullProductData.title}
                     </h3>
-                    <Button
-                      variant="primary"
-                      icon={<Icon source={XIcon} tone="critical" />}
-                      onClick={() => removeProduct(selectedProduct.id)}
-                    >
-                      Remove
-                    </Button>
+                    {disable ? null : (
+                      <Button
+                        variant="primary"
+                        icon={<Icon source={XIcon} tone="critical" />}
+                        onClick={() => removeProduct(selectedProduct.id)}
+                      >
+                        Remove
+                      </Button>
+                    )}
                   </div>
 
                   {selectedProduct.variants.map((variant, variantIndex) => {
-
                     // Find the variant data within the product based on variant ID
                     // const variantData = fullProductData.variants.find(
                     //   (v) => v.id === variant.variantId,
@@ -85,22 +90,22 @@ export default function ShowCollectionsList({ products }) {
                       (v) => v.id === variant,
                     );
 
-                    console.log(variantData)
-
                     return variantData ? (
                       <div key={variantIndex} style={styles.selectedVariants}>
                         <div style={styles.variants}>
                           {/* Display variant title */}
                           <h4>{variantData.title}</h4>
-                          <Button
-                            variant="primary"
-                            icon={<Icon source={XIcon} tone="critical" />}
-                            onClick={() =>
-                              removeVariant(selectedProduct.id, variant.id)
-                            }
-                          >
-                            Remove Variant
-                          </Button>
+                          {disable ? null : (
+                            <Button
+                              variant="primary"
+                              icon={<Icon source={XIcon} tone="critical" />}
+                              onClick={() =>
+                                removeVariant(selectedProduct.id, variant.id)
+                              }
+                            >
+                              Remove Variant
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ) : null;
@@ -121,13 +126,15 @@ export default function ShowCollectionsList({ products }) {
                     <h3 style={styles.selectedTitle}>
                       {fullProductData.title}
                     </h3>
-                    <Button
-                      variant="primary"
-                      icon={<Icon source={XIcon} tone="critical" />}
-                      onClick={() => removeProduct(selectedProduct.id)}
-                    >
-                      Remove
-                    </Button>
+                    {disable ? null : (
+                      <Button
+                        variant="primary"
+                        icon={<Icon source={XIcon} tone="critical" />}
+                        onClick={() => removeProduct(selectedProduct.id)}
+                      >
+                        Remove
+                      </Button>
+                    )}
                   </div>
 
                   {selectedProduct.variants.map((variantId, variantIndex) => {
@@ -141,15 +148,17 @@ export default function ShowCollectionsList({ products }) {
                         <div style={styles.variants}>
                           {/* Display variant title */}
                           <h4>{variantData.title}</h4>
-                          <Button
-                            variant="primary"
-                            icon={<Icon source={XIcon} tone="critical" />}
-                            onClick={() =>
-                              removeVariant(selectedProduct.id, variantId)
-                            }
-                          >
-                            Remove Variant
-                          </Button>
+                          {disable ? null : (
+                            <Button
+                              variant="primary"
+                              icon={<Icon source={XIcon} tone="critical" />}
+                              onClick={() =>
+                                removeVariant(selectedProduct.id, variantId)
+                              }
+                            >
+                              Remove Variant
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ) : null;

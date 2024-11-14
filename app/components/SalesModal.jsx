@@ -33,10 +33,8 @@ export default function SalesModal({
   collections,
   handleUpdate,
   code,
-  handleExtendTime
+  handleExtendTime,
 }) {
-  const handleExtend = () => {};
-
   const modelHeading = updateSales ? "Update Campaign" : "Create Campaign";
   const contentText = isDisable
     ? "Extend the Campaign!"

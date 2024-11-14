@@ -675,10 +675,20 @@ export const action = async ({ request }) => {
           },
         });
 
-        return json({ success: true, sale: updateSingleSale, sales: allSales });
+        return json({
+          message: "Campaign Function Activated!",
+          success: true,
+          error: false,
+          sale: updateSingleSale,
+          sales: allSales,
+        });
       } catch (error) {
         console.error("Error updating sale:", error);
-        return json({ error: "Something went wrong!", details: error.message });
+        return json({
+          message: "Something went wrong!",
+          error: true,
+          details: error.message,
+        });
       }
     case "EXTEND_SALES_END_TIME":
       try {
@@ -696,7 +706,10 @@ export const action = async ({ request }) => {
           { status: "201" },
         );
       } catch (error) {
-        return json({ error: "Something went wrong!", details: error.message });
+        return json({
+          message: "Something went wrong!",
+          details: error.message,
+        });
       }
 
     default:
@@ -913,11 +926,17 @@ export default function Index() {
     const value = data[0];
     // Finding if any status has an active status or not
     if (value.status === "Active") {
+      setIsScheduled(true);
       setIsDisable(true);
     }
 
     if (value.status === "Schedule") {
       setIsScheduled(true);
+    }
+
+    if (value.status === "Disabled") {
+      setIsScheduled(false);
+      setIsDisable(false);
     }
     // Getting the data if there is any collection or not
     const { matchingCollectionIds, orphanProducts } = findMatchingCollectionIds(
@@ -964,7 +983,6 @@ export default function Index() {
   };
 
   const handleExtendTime = async () => {
-    console.log("Extended Time of Sale", id);
     const formData = {
       actionKey: "EXTEND_SALES_END_TIME",
       id,
@@ -974,6 +992,7 @@ export default function Index() {
     console.log(formData);
     try {
       await fetcher.submit(formData, { method: "POST" });
+      setShowModal(false);
     } catch (error) {
       console.log("Something Went Wrong!");
     }
@@ -996,7 +1015,7 @@ export default function Index() {
 
   useEffect(() => {
     if (scheduleProducts.length > 0) {
-      // console.log("Schedule Products:------", scheduleProducts);
+      console.log("Schedule Products:------", scheduleProducts);
       handleApplySales();
     }
   }, [scheduleProducts.length > 0, salesData]);
@@ -1081,7 +1100,9 @@ export default function Index() {
                 <div className="flex flex-col overflow-x-auto flex-[4]">
                   {/* SALES HEADING AND BUTTON CONTAINER */}
                   <div className="flex justify-between mb-4 lg:my-6">
-                    <h1 className="text-xl lg:text-2xl font-bold">All Sales Listed</h1>
+                    <h1 className="text-xl lg:text-2xl font-bold">
+                      All Sales Listed
+                    </h1>
                     <div className="flex justify-center items-center gap-4">
                       <Button
                         variant="primary"
@@ -1102,7 +1123,7 @@ export default function Index() {
                       <Button
                         tone="critical"
                         onClick={() =>
-                          deleteSale("71ca4748-d9e8-46f0-a616-5c277994db12")
+                          deleteSale("e1418784-7c88-426d-b0f5-973e9f7a1131")
                         }
                       >
                         Delete Campaign

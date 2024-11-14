@@ -35,18 +35,32 @@ export default function DateAndTimePicker({
   const formattedEndDate = eDate.toLocaleDateString("en-PK");
 
   // Handle Date Change for Start Date
+  // Handle Date Change for Start Date
   const handleStartDateSelection = ({ end: newSelectedDate }) => {
-    const localDate = new Date(newSelectedDate);
-    setSdate(localDate);
-    const newEndDate = new Date(localDate);
-    newEndDate.setDate(localDate.getDate() + 2);
+    const utcDate = new Date(
+      Date.UTC(
+        newSelectedDate.getFullYear(),
+        newSelectedDate.getMonth(),
+        newSelectedDate.getDate(),
+      ),
+    );
+    setSdate(utcDate);
+
+    const newEndDate = new Date(utcDate);
+    newEndDate.setUTCDate(newEndDate.getUTCDate() + 2);
     setEdate(newEndDate);
   };
 
   // Handle Date Change for End Date
   const handleEndDateSelection = ({ end: newSelectedDate }) => {
-    const localDate = new Date(newSelectedDate);
-    setEdate(localDate);
+    const utcDate = new Date(
+      Date.UTC(
+        newSelectedDate.getFullYear(),
+        newSelectedDate.getMonth(),
+        newSelectedDate.getDate(),
+      ),
+    );
+    setEdate(utcDate);
   };
 
   return (

@@ -12,7 +12,7 @@ import { SearchIcon } from "@shopify/polaris-icons";
 import { useState, useCallback, useMemo, useContext } from "react";
 import { SelectContext } from "../context/Select-Context";
 
-export default function MultiCollectionSelector({ collections }) {
+export default function MultiCollectionSelector({ collections, disable }) {
   const deselectedCollections = useMemo(
     () =>
       collections.map(({ node }) => ({
@@ -77,25 +77,25 @@ export default function MultiCollectionSelector({ collections }) {
     [selectedCollection, updateText],
   );
 
-  const removeTag = useCallback(
-    (tag) => () => {
-      const options = [...selectedCollection];
-      options.splice(options.indexOf(tag), 1);
-      setSelectedCollection(options);
-      console.log("Remove Tag", tag);
+  // const removeTag = useCallback(
+  //   (tag) => () => {
+  //     const options = [...selectedCollection];
+  //     options.splice(options.indexOf(tag), 1);
+  //     setSelectedCollection(options);
+  //     console.log("Remove Tag", tag);
 
-      removeCollection(tag);
-    },
-    [selectedCollection],
-  );
+  //     removeCollection(tag);
+  //   },
+  //   [selectedCollection],
+  // );
 
-  const tagsMarkup = selectedCollection.map((option) => {
-    return (
-      <Tag key={`option-${option}`} onRemove={removeTag(option)}>
-        {option}
-      </Tag>
-    );
-  });
+  // const tagsMarkup = selectedCollection.map((option) => {
+  //   return (
+  //     <Tag key={`option-${option}`} onRemove={removeTag(option)}>
+  //       {option}
+  //     </Tag>
+  //   );
+  // });
 
   const optionsMarkup =
     options.length > 0
@@ -108,6 +108,7 @@ export default function MultiCollectionSelector({ collections }) {
               value={value}
               selected={selectedCollection.includes(value)}
               accessibilityLabel={label}
+              disabled={disable}
             >
               {label}
             </Listbox.Option>

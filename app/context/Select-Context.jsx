@@ -250,7 +250,7 @@ export default function SelectContextProvider({ children }) {
     filterActiveProducts();
     filterScheduleProducts();
     filterDisableProducts();
-  }, [sales, filterActiveProducts, filterDisableProducts]);
+  }, [sales, filterDisableProducts]);
 
   useEffect(() => {
     fetchProductsFromSelectedCollections();

@@ -50,7 +50,6 @@ function SelectCollections({ collections, products, disabled }) {
         options={options}
         onChange={handleChoiceChange}
         value={choice}
-        disabled={disabled}
       />
 
       {choice === "collections" && (
@@ -61,11 +60,11 @@ function SelectCollections({ collections, products, disabled }) {
             onChange={handleSelectChange}
             value={selectedId || ""}
           /> */}
-          <MultiCollectionSelector collections={collections} />
+          <MultiCollectionSelector collections={collections} disable={disabled}/>
         </div>
       )}
       {choice !== "select" && choice !== "collections" && (
-        <ShowCollectionsList products={selectedCollectionProducts} />
+        <ShowCollectionsList products={selectedCollectionProducts} disable={disabled}/>
       )}
     </>
   );
