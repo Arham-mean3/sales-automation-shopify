@@ -2,13 +2,14 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import cron from "node-cron";
-import { Text, Button, Toast, Frame } from "@shopify/polaris";
+import { Button, Toast, Frame } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import {
   getAllCollections,
   getAllProductsQuery,
   getCurrencyCode,
   getProductsQuery,
+  getStoreUrl,
   updateProductVariantsPrice,
 } from "../lib/queries";
 import { dateToCron, getSingleProduct, parseDate } from "../lib/utils";
@@ -16,6 +17,8 @@ import SalesModal from "../components/SalesModal";
 import { SelectContext } from "../context/Select-Context";
 import prisma from "../db.server";
 import SalesTable from "../components/SalesAllList";
+
+const saleEndJobs = new Map();
 
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
@@ -36,7 +39,29 @@ export const loader = async ({ request }) => {
     `,
   );
 
+  const currencyCodeResponse = await admin.graphql(
+    `#graphql
+    ${getCurrencyCode}
+    `,
+  );
+
+  const storeUrlResponse = await admin.graphql(`
+    #graphql
+    ${getStoreUrl}`);
+
+  const sessions = await prisma.session.findMany();
+
+  const data = await response.json();
+  const productsData = await newResponse.json();
+  const collections = await collectionResponse.json();
+  const currencyCode = await currencyCodeResponse.json();
+
+  const storeUrl = await storeUrlResponse.json();
+
   const allSales = await prisma.sale.findMany({
+    where: {
+      storeUrl: storeUrl.data.shop.url,
+    },
     include: {
       products: {
         include: {
@@ -46,19 +71,6 @@ export const loader = async ({ request }) => {
     },
   });
 
-  const currencyCodeResponse = await admin.graphql(
-    `#graphql
-    ${getCurrencyCode}
-    `,
-  );
-
-  const sessions = await prisma.session.findMany();
-
-  const data = await response.json();
-  const productsData = await newResponse.json();
-  const collections = await collectionResponse.json();
-  const currencyCode = await currencyCodeResponse.json();
-
   return json({
     products: data.data.products.edges,
     allProducts: productsData.data.products.edges,
@@ -66,6 +78,7 @@ export const loader = async ({ request }) => {
     allSales: JSON.stringify(allSales),
     sessions: sessions,
     currencyCode: currencyCode.data.shop.currencyCode,
+    url: storeUrl.data.shop.url,
   });
 };
 
@@ -306,7 +319,11 @@ export const action = async ({ request }) => {
             scheduled: true,
           });
 
-          console.log(startJob, endJob);
+          saleEndJobs.set(id, endJob); // Store the job for future reference
+
+          // console.log(startJob, endJob);
+
+          console.log("EndJob", endJob.options.name);
         };
 
         for (const product of productsData) {
@@ -338,21 +355,10 @@ export const action = async ({ request }) => {
           eDate,
           etime,
           stime,
+          storeUrl,
         } = formData;
         const productsData = JSON.parse(products);
 
-        // console.log(
-        //   "------------------------------",
-        //   salesTitle,
-        //   saleTags,
-        //   productsData,
-        //   salesValue,
-        //   sDate,
-        //   eDate,
-        //   etime,
-        //   stime,
-        //   salesType,
-        // );
         // Prepare the sale data for database insertion
         const newSale = await prisma.sale.create({
           data: {
@@ -364,6 +370,7 @@ export const action = async ({ request }) => {
             eDate: new Date(eDate), // Ensure eDate is a Date object
             stime: stime,
             etime: etime,
+            storeUrl: storeUrl,
             status: "Schedule",
             products: {
               create: productsData.map((product) => ({
@@ -423,12 +430,13 @@ export const action = async ({ request }) => {
         const { id } = formData;
 
         const now = new Date();
+        // now.setSeconds(now.getSeconds() + 10);
         now.setMinutes(now.getMinutes() + 1); // Add 1 minute
         const hours = String(now.getHours()).padStart(2, "0");
         const minutes = String(now.getMinutes()).padStart(2, "0");
         const currentTime = `${hours}:${minutes}`; // Time in HH:MM format, 1 minute ahead
 
-        console.log("Time 1 minute later:", currentTime);
+        // console.log("10s later:", currentTime);
         // Fetch the current sale to get the current status
         const currentSale = await prisma.sale.findUnique({
           where: { id: id },
@@ -572,67 +580,13 @@ export const action = async ({ request }) => {
           sDate,
           eDate,
           products,
+          storeUrl,
         } = formData;
 
         // Parse the products JSON string to an array of products
         const parsedProducts = JSON.parse(products);
 
         console.log("Updating Products", parsedProducts);
-
-        // const existingSale = await prisma.sale.findUnique({
-        //   where: { id: id },
-        //   select: { status: true },
-        // });
-
-        // if (!existingSale) {
-        //   return json({ error: "Sale not found!" });
-        // }
-
-        // // Determine the new status based on the current status
-        // let newStatus = existingSale.status;
-        // if (existingSale.status === "Disabled") {
-        //   newStatus = "Schedule";
-        // } else if (existingSale.status === "Active") {
-        //   newStatus = "Schedule";
-        // }
-
-        // Update the sale record in the database
-        // const updateSingleSale = await prisma.sale.update({
-        //   where: { id: id },
-        //   data: {
-        //     salesValue,
-        //     salesType,
-        //     salesTitle,
-        //     saleTags,
-        //     status: newStatus,
-        //     etime,
-        //     stime,
-        //     sDate: new Date(sDate),
-        //     eDate: new Date(eDate),
-        //     products: {
-        //       // connectOrCreate: parsedProducts.map((product) => ({
-        //       //   where: { id: product.id },
-        //       //   create: {
-        //       //     pId: product.pId,
-        //       //     variants: {
-        //       //       connectOrCreate: product.variants.map((variant) => ({
-        //       //         where: { id: variant.id },
-        //       //         create: { variantId: variant.variantId },
-        //       //       })),
-        //       //     },
-        //       //   },
-        //       // })),
-        //       create: parsedProducts.map((product) => ({
-        //         pId: product.id,
-        //         variants: {
-        //           create: product.variants.map((variantId) => ({
-        //             variantId: variantId,
-        //           })),
-        //         },
-        //       })),
-        //     },
-        //   },
-        // });
 
         await prisma.sale.delete({
           where: {
@@ -651,6 +605,7 @@ export const action = async ({ request }) => {
             stime: stime,
             etime: etime,
             status: "Schedule",
+            storeUrl: storeUrl,
             products: {
               create: parsedProducts.map((product) => ({
                 pId: product.id,
@@ -696,11 +651,152 @@ export const action = async ({ request }) => {
 
         console.log(id, eDate, etime);
 
-        const updated = await prisma.sale.update({
+        const existingEndJob = saleEndJobs.get(id);
+
+        // console.log("Sale End Job Map", saleEndJobs);
+        console.log("Existing End Job Found! ", existingEndJob);
+        // console.log("Type of Existing End Job! ", typeof existingEndJob);
+
+        const currentSale = await prisma.sale.findUnique({
+          where: { id: id },
+          select: {
+            status: true,
+            products: {
+              select: {
+                pId: true, // Assuming pId is a field on the 'products' model
+                variants: {
+                  select: {
+                    variantId: true, // Assuming variantId is a field on the 'variants' model
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        const processedSaleData = currentSale.products.map((product) => {
+          return {
+            id: product.pId, // Product ID
+            variants: product.variants.map((variant) => variant.variantId), // Map variants to an array of variant IDs
+          };
+        });
+
+        if (!currentSale) {
+          return json(
+            { message: "Sale not found", statusChanged: false },
+            { status: 404 },
+          );
+        }
+
+        // console.log("Current Sales", processedSaleData);
+
+        const tasks = cron.getTasks();
+        const taskEntries = [...tasks.entries()].reverse();
+
+        console.log(
+          "Option Name of Existing Sale Job",
+          existingEndJob.options.name,
+        );
+
+        for (let [key, task] of taskEntries) {
+          console.log("Task ID:", key);
+          if (key === existingEndJob.options.name) {
+            console.log("Sale Found and set to be ended!!");
+            console.log(task);
+            task.off(); // Stop the existing task
+            console.log("Sale Stopped!");
+            saleEndJobs.delete(id); // Remove the job from the map
+            console.log("Existing end job stopped for sale ID:", id);
+            break; // No need to continue loop once the task is found and stopped
+          }
+        }
+
+        const endDate = parseDate(eDate);
+
+        const newCronExpressione = dateToCron(endDate, etime);
+
+        console.log("New Cron End Expression", newCronExpressione);
+
+        const endSale = async () => {
+          console.log("Ending sale at:", endDate);
+          await prisma.sale.updateMany({
+            where: {
+              id: id, // The ID of the sale you are starting
+              status: "Active", // Only update if the current status is "Active"
+            },
+            data: {
+              status: "Disabled", // Change the status to "Disabled"
+            },
+          });
+          for (const product of processedSaleData) {
+            const { id: productId, variants } = product;
+            console.log(productId, variants);
+            for (const variantId of variants) {
+              try {
+                // Fetch the current compareAtPrice to use as the original price
+                const variantPriceQuery = await admin.graphql(
+                  `#graphql
+                    query getVariantCompareAtPrice($id: ID!) {
+                      productVariant(id: $id) {
+                        compareAtPrice
+                      }
+                    }
+                  `,
+                  { variables: { id: variantId } },
+                );
+
+                const variantPriceResponse = await variantPriceQuery.json();
+                const originalPrice = parseFloat(
+                  variantPriceResponse?.data?.productVariant?.compareAtPrice,
+                );
+
+                console.log("Original Price", originalPrice);
+
+                // Update the price to original and reset compareAtPrice to 0
+                const productRevertUpdate = await admin.graphql(
+                  `#graphql
+                    ${updateProductVariantsPrice}
+                  `,
+                  {
+                    variables: {
+                      productId: productId,
+                      variants: [
+                        {
+                          id: variantId,
+                          price: parseFloat(originalPrice).toFixed(2), // Set price to original
+                          compareAtPrice: null, // Set compareAtPrice to null (or 0)
+                        },
+                      ],
+                    },
+                  },
+                );
+
+                const revertUpdateResponse = await productRevertUpdate.json();
+
+                console.log("Revert Update Response", revertUpdateResponse);
+              } catch (error) {
+                console.log("Error reverting variant ID:", variantId, error);
+              }
+            }
+          }
+        };
+
+        const newEndJob = cron.schedule(newCronExpressione, endSale, {
+          scheduled: true,
+        });
+
+        saleEndJobs.set(id, newEndJob); // Store the new job in the map
+        console.log("New end job scheduled:", newEndJob);
+
+        await prisma.sale.update({
           where: { id: id },
           data: { eDate: new Date(eDate), etime: etime },
         });
-        console.log("Updated", updated);
+
+        for (let [key] of taskEntries) {
+          console.log("All Keys after one got deleted-", key);
+        }
+
         return json(
           { message: "Successfully Campaign Time Extended", success: true },
           { status: "201" },
@@ -711,19 +807,18 @@ export const action = async ({ request }) => {
           details: error.message,
         });
       }
-
     default:
       break;
   }
 };
 
 export default function Index() {
-  const { allProducts, allCollection, allSales, currencyCode } =
+  const { allProducts, allCollection, allSales, currencyCode, url } =
     useLoaderData();
   const AllSales = JSON.parse(allSales);
   const fetcher = useFetcher();
 
-  console.log("All Sales", AllSales);
+  // console.log("All Sales", AllSales);
   const {
     products,
     scheduleProducts,
@@ -742,6 +837,8 @@ export default function Index() {
   const [toastMessage, setToastMessage] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [salesCollectionIds, setSalesCollectionIds] = useState([]);
+
+  let storeUrl = url;
 
   let code = currencyCode;
 
@@ -773,19 +870,6 @@ export default function Index() {
   const salesData = fetcher.data?.sales;
   // const salesStarted = fetcher.data?.result?.saleStarted;
   const res = fetcher.data?.statusChanged;
-
-  const deselectedSalesData = useMemo(() => {
-    return AllSales.map((sale) => ({
-      id: sale.id,
-      status: sale.status,
-    }));
-  }, [AllSales]);
-
-  console.log("Sale Data for sales data", deselectedSalesData);
-
-  useEffect(() => {
-    console.log("All Products ", products);
-  }, [products]);
 
   // Handle Sales Types Function
   const handleSelectSalesTypeChanges = useCallback(
@@ -853,6 +937,7 @@ export default function Index() {
         sDate,
         etime,
         stime,
+        storeUrl,
       };
 
       try {
@@ -966,7 +1051,7 @@ export default function Index() {
         sDate,
         eDate,
         products: JSON.stringify(products),
-        // newProducts: products,
+        storeUrl,
       };
       try {
         // console.log("Form Data", formData);
@@ -1020,15 +1105,18 @@ export default function Index() {
     }
   }, [scheduleProducts.length > 0, salesData]);
 
-  // if (res) {
-  //   setShowToast(true);
-  //   setError(false);
-  //   setToastMessage("Status updated successfully!");
-  // }
+  const deselectedSalesData = useMemo(() => {
+    return AllSales.map((sale) => ({
+      id: sale.id,
+      status: sale.status,
+    }));
+  }, [AllSales]);
 
-  // useEffect(() => {
-  //   // console.log("Id", id);
-  // }, [id]);
+  console.log("Sale Data for sales data", deselectedSalesData);
+
+  useEffect(() => {
+    console.log("All Products ", products);
+  }, [products]);
 
   useEffect(() => {
     if (res) {
@@ -1037,10 +1125,6 @@ export default function Index() {
       setToastMessage("Status updated successfully!");
     }
   }, [res]);
-
-  // useEffect(() => {
-  //   setAllProducts(allProducts);
-  // }, [])
 
   return (
     <Frame>
@@ -1114,6 +1198,8 @@ export default function Index() {
                           setSaleTags("");
                           setUpdate(false);
                           setShowModal(true);
+                          setIsDisable(false);
+                          setIsScheduled(false);
                         }}
                         primary
                       >
@@ -1134,6 +1220,7 @@ export default function Index() {
                     data={AllSales}
                     salesHandler={handleStatus}
                     updateSalesHandler={handleUpdateSale}
+                    deleteSale={deleteSale}
                   />
                 </div>
                 {/* INFO TEXT AND TITLE */}
@@ -1159,23 +1246,3 @@ export default function Index() {
     </Frame>
   );
 }
-
-// export function ErrorBoundary({ error }) {
-//   console.log("Something went wrong! ", error);
-//   return (
-//     <div style={{ width: "100%", height: "500px" }}>
-//       <div
-//         style={{
-//           display: "flex",
-//           justifyContent: "center",
-//           alignItems: "center",
-//           padding: 40,
-//           backgroundColor: "#ddd",
-//           borderRadius: 10,
-//         }}
-//       >
-//         <p>There is an error encountered</p>
-//       </div>
-//     </div>
-//   );
-// }

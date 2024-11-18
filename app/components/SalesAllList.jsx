@@ -9,7 +9,12 @@ import {
 import { useState, useCallback, useMemo } from "react";
 import { calculateTimeEstimation, formatDateTime } from "../lib/utils";
 
-export default function SalesTable({ data, salesHandler, updateSalesHandler }) {
+export default function SalesTable({
+  data,
+  salesHandler,
+  updateSalesHandler,
+  deleteSale,
+}) {
   const deselectedSalesData = useMemo(() => {
     return data.map((sale) => ({
       id: sale.id,
@@ -125,7 +130,10 @@ export default function SalesTable({ data, salesHandler, updateSalesHandler }) {
         </IndexTable.Cell>
         <IndexTable.Cell>
           {status === "Active" ? (
-            <div onClick={(e) => e.stopPropagation()}>
+            <div
+              className="flex gap-4 items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Button
                 variant="tertiary"
                 tone="critical"
@@ -133,9 +141,15 @@ export default function SalesTable({ data, salesHandler, updateSalesHandler }) {
               >
                 Disable
               </Button>
+              <Button tone="critical" onClick={() => deleteSale(id)}>
+                Delete
+              </Button>
             </div>
           ) : status === "Disabled" ? (
-            <div onClick={(e) => e.stopPropagation()}>
+            <div
+              className="flex gap-4 items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Button
                 variant="primary"
                 tone="success"
@@ -146,17 +160,26 @@ export default function SalesTable({ data, salesHandler, updateSalesHandler }) {
               >
                 Active
               </Button>
+              <Button tone="critical" onClick={() => deleteSale(id)}>
+                Delete
+              </Button>
             </div>
           ) : (
             status === "Schedule" && (
               // <Text tone="magic-subdued">Soon to be Started</Text>
-              <div onClick={(e) => e.stopPropagation()}>
+              <div
+                className="flex gap-4 items-center"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <Button
                   variant="tertiary"
                   tone="critical"
                   onClick={() => salesHandler(productId)}
                 >
                   Disable
+                </Button>
+                <Button tone="critical" onClick={() => deleteSale(id)}>
+                  Delete
                 </Button>
               </div>
             )

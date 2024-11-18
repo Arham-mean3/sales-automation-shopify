@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "8c343e825a810addc543e718aa692715"
-application_url = "https://societies-matrix-islands-informational.trycloudflare.com"
+application_url = "https://midwest-raw-labels-rachel.trycloudflare.com"
 embedded = true
 name = "arham-test-app"
 handle = "arham-test-app"
@@ -36,9 +36,9 @@ scopes = "read_shopify_payments_accounts,write_products"
 
 [auth]
 redirect_urls = [
-  "https://societies-matrix-islands-informational.trycloudflare.com/auth/callback",
-  "https://societies-matrix-islands-informational.trycloudflare.com/auth/shopify/callback",
-  "https://societies-matrix-islands-informational.trycloudflare.com/api/auth/callback"
+  "https://midwest-raw-labels-rachel.trycloudflare.com/auth/callback",
+  "https://midwest-raw-labels-rachel.trycloudflare.com/auth/shopify/callback",
+  "https://midwest-raw-labels-rachel.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

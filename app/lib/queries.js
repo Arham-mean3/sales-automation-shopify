@@ -160,3 +160,11 @@ query ShopMetafield {
   }
 }
 `;
+
+export const getStoreUrl = `
+query ShopMetafield {
+  shop{
+    url
+  }
+}
+`;

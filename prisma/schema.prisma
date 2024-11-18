@@ -41,6 +41,7 @@ model Sale {
   eDate       DateTime
   stime       String
   etime       String
+  storeUrl    String
   products    Product[]   @relation("SalesProducts") // Many-to-many relation with Product
   status      String
   createdAt   DateTime    @default(now())
