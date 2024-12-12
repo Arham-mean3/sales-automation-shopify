@@ -52,7 +52,7 @@ export default function SalesTable({
     useIndexResourceState(filteredOrders);
 
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 10;
+  const itemsPerPage = 50;
 
   // Calculate the total pages based on the filtered results
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
@@ -85,17 +85,17 @@ export default function SalesTable({
         position={index}
       >
         <IndexTable.Cell>
-          <button
+          {/* <button
             className="bg-none outline-none border-0 cursor-pointer lg:py-4"
             onClick={(e) => {
               e.stopPropagation();
               updateSalesHandler(id);
             }}
-          >
-            <p>
-              <span className="text-xs lg:text-sm">{title}</span>
-            </p>
-          </button>
+          > */}
+          <p>
+            <span className="text-xs lg:text-sm">{title}</span>
+          </p>
+          {/* </button> */}
         </IndexTable.Cell>
         <IndexTable.Cell>
           <p className="text-xs lg:text-sm">
@@ -141,9 +141,9 @@ export default function SalesTable({
               >
                 Disable
               </Button>
-              <Button tone="critical" onClick={() => deleteSale(id)}>
+              {/* <Button tone="critical" onClick={() => deleteSale(id)}>
                 Delete
-              </Button>
+              </Button> */}
             </div>
           ) : status === "Disabled" ? (
             <div
@@ -202,44 +202,45 @@ export default function SalesTable({
   };
 
   return (
-    <Card background="avatar-bg-fill">
-      <div className="py-5">
-        <TextField
-          value={queryValue}
-          onChange={handleFiltersQueryChange}
-          placeholder="Search Campaign"
-          clearButton
-          onClearButtonClick={handleQueryValueRemove}
-        />
-      </div>
-      <div style={filteredOrders.length === 0 ? null : null}>
-        <IndexTable
-          resourceName={resourceName}
-          itemCount={filteredOrders.length}
-          selectedItemsCount={
-            allResourcesSelected ? "All" : selectedResources.length
-          }
-          onSelectionChange={handleSelectionChange}
-          headings={[
-            { title: "Sales Title" },
-            { title: "Product/Collections Count" },
-            { title: "Time Estimation" },
-            { title: "Start Date" },
-            { title: "End Date" },
-            { title: "Status" },
-            { title: "Actions" },
-          ]}
-          selectable={false}
-          pagination={{
-            hasNext: currentPage < totalPages - 1,
-            hasPrevious: currentPage > 0,
-            onNext: handleNextPage,
-            onPrevious: handlePreviousPage,
-          }}
-        >
-          {rowMarkup}
-        </IndexTable>
-      </div>
+    <Card background="bg-fill-magic-secondary-active">
+     
+        <div className="py-5">
+          <TextField
+            value={queryValue}
+            onChange={handleFiltersQueryChange}
+            placeholder="Search Campaign"
+            clearButton
+            onClearButtonClick={handleQueryValueRemove}
+          />
+        </div>
+        <div style={filteredOrders.length === 0 ? null : null}>
+          <IndexTable
+            resourceName={resourceName}
+            itemCount={filteredOrders.length}
+            selectedItemsCount={
+              allResourcesSelected ? "All" : selectedResources.length
+            }
+            onSelectionChange={handleSelectionChange}
+            headings={[
+              { title: "Sales Title" },
+              { title: "Product/Collections Count" },
+              { title: "Time Estimation" },
+              { title: "Start Date" },
+              { title: "End Date" },
+              { title: "Status" },
+              { title: "Actions" },
+            ]}
+            selectable={false}
+            pagination={{
+              hasNext: currentPage < totalPages - 1,
+              hasPrevious: currentPage > 0,
+              onNext: handleNextPage,
+              onPrevious: handlePreviousPage,
+            }}
+          >
+            {rowMarkup}
+          </IndexTable>
+        </div>
     </Card>
   );
 }

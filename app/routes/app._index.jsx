@@ -1027,7 +1027,7 @@ export default function Index() {
     const { matchingCollectionIds, orphanProducts } = findMatchingCollectionIds(
       data[0].products,
     );
-    console.log("dataa---------------", data[0].products);
+    // console.log("dataa---------------", data[0].products);
     setSelectedCollection(matchingCollectionIds);
     setProducts(orphanProducts);
     setSaleTitle(value.salesTitle);
@@ -1112,11 +1112,11 @@ export default function Index() {
     }));
   }, [AllSales]);
 
-  console.log("Sale Data for sales data", deselectedSalesData);
+  // console.log("Sale Data for sales data", deselectedSalesData);
 
-  useEffect(() => {
-    console.log("All Products ", products);
-  }, [products]);
+  // useEffect(() => {
+  //   console.log("All Products ", products);
+  // }, [products]);
 
   useEffect(() => {
     if (res) {
@@ -1128,7 +1128,7 @@ export default function Index() {
 
   return (
     <Frame>
-      <div className="w-full h-full bg-[#DCE4C9]">
+      <div className="w-full h-full bg-[#ebebeb]">
         {/* <TitleBar title="Remix app template"></TitleBar> */}
         <div className="px-4 md:px-8 lg:px-10">
           {/* Toast Container */}
@@ -1185,7 +1185,7 @@ export default function Index() {
                   {/* SALES HEADING AND BUTTON CONTAINER */}
                   <div className="flex justify-between mb-4 lg:my-6">
                     <h1 className="text-xl lg:text-2xl font-bold">
-                      All Sales Listed
+                      All Campaign Listed
                     </h1>
                     <div className="flex justify-center items-center gap-4">
                       <Button
@@ -1206,14 +1206,14 @@ export default function Index() {
                         Create Campaign
                       </Button>
 
-                      <Button
+                      {/* <Button
                         tone="critical"
                         onClick={() =>
                           deleteSale("e1418784-7c88-426d-b0f5-973e9f7a1131")
                         }
                       >
                         Delete Campaign
-                      </Button>
+                      </Button> */}
                     </div>
                   </div>
                   <SalesTable
@@ -1226,7 +1226,7 @@ export default function Index() {
                 {/* INFO TEXT AND TITLE */}
 
                 <div className="flex flex-col mt-4 lg:mt-20 gap-4 w-[60%] lg:flex-1">
-                  <div className="p-4 bg-white rounded-md flex flex-col items-center">
+                  <div className="p-4 bg-white rounded-md flex flex-col items-center border-[1px] border-[#ddd] shadow-xl">
                     <strong className="block text-base mb-4">
                       Boost Sales Effortlessly with Automated Discounts!
                     </strong>

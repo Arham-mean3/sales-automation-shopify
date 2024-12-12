@@ -1,0 +1,29 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "239a19bc5e72247f34bbd39ef2a403d6"
+application_url = "https://ethernet-stranger-cap-trains.trycloudflare.com"
+embedded = true
+name = "Smart Campaign"
+handle = "smart-campaign"
+
+[build]
+include_config_on_deploy = true
+dev_store_url = "store-for-customer-account-test.myshopify.com"
+automatically_update_urls_on_dev = true
+
+[webhooks]
+api_version = "2024-10"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_shopify_payments_accounts,write_products"
+
+[auth]
+redirect_urls = [
+  "https://ethernet-stranger-cap-trains.trycloudflare.com/auth/callback",
+  "https://ethernet-stranger-cap-trains.trycloudflare.com/auth/shopify/callback",
+  "https://ethernet-stranger-cap-trains.trycloudflare.com/api/auth/callback"
+]
+
+[pos]
+embedded = false

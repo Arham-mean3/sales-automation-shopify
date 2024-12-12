@@ -1,13 +1,13 @@
 export const getProductsQuery = `
 query productInfo {
-  products(first: 10, reverse: true) {
+  products(first: 250, reverse: true) {
     edges {
       node {
         title
         handle
         status
         createdAt
-        variants(first: 3) {
+        variants(first: 250) {
           edges {
             node {
               price
@@ -23,7 +23,7 @@ query productInfo {
 
 export const getAllProductsQuery = `  
 query productInfo {
-  products(first: 100) {
+  products(first: 250) {
     edges {
       node {
         id
@@ -31,7 +31,7 @@ query productInfo {
         handle
         status
         createdAt
-        variants(first: 60) {
+        variants(first: 250) {
           edges {
             node {
               id

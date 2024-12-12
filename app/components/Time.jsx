@@ -2,11 +2,16 @@ import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Listbox, Combobox, Icon } from "@shopify/polaris";
 import { CalendarTimeIcon } from "@shopify/polaris-icons";
 
-export default function TimeSelector({ selectedTime, setSelectedTime, label, disabled }) {
+export default function TimeSelector({
+  selectedTime,
+  setSelectedTime,
+  label,
+  disabled,
+}) {
   const generateTimeSlots = useCallback(() => {
     const times = [];
     for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute++) {
+      for (let minute = 0; minute < 60; minute += 5) {
         const formattedHour = hour % 12 === 0 ? 12 : hour % 12; // Convert to 12-hour format
         const formattedMinute = String(minute).padStart(2, "0");
         const amPm = hour < 12 ? "AM" : "PM";
@@ -20,7 +25,7 @@ export default function TimeSelector({ selectedTime, setSelectedTime, label, dis
 
   const deselectedOptions = useMemo(
     () => generateTimeSlots(),
-    [generateTimeSlots]
+    [generateTimeSlots],
   );
 
   const getCurrentTimeValue = () => {
@@ -37,14 +42,14 @@ export default function TimeSelector({ selectedTime, setSelectedTime, label, dis
     const currentTime = getCurrentTimeValue();
     setSelectedTime(currentTime);
     const currentTimeLabel = deselectedOptions.find(
-      (option) => option.value === currentTime
+      (option) => option.value === currentTime,
     )?.label;
     setInputValue(currentTimeLabel || "");
   }, [deselectedOptions, setSelectedTime]);
 
   const escapeSpecialRegExCharacters = useCallback(
     (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-    []
+    [],
   );
 
   const updateText = useCallback(
@@ -57,11 +62,11 @@ export default function TimeSelector({ selectedTime, setSelectedTime, label, dis
 
       const filterRegex = new RegExp(escapeSpecialRegExCharacters(value), "i");
       const resultOptions = deselectedOptions.filter((option) =>
-        option.label.match(filterRegex)
+        option.label.match(filterRegex),
       );
       setOptions(resultOptions);
     },
-    [deselectedOptions, escapeSpecialRegExCharacters]
+    [deselectedOptions, escapeSpecialRegExCharacters],
   );
 
   const updateSelection = useCallback(
@@ -70,7 +75,7 @@ export default function TimeSelector({ selectedTime, setSelectedTime, label, dis
       const matchedOption = options.find((option) => option.value === selected);
       setInputValue((matchedOption && matchedOption.label) || ""); // Display 12-hour format label
     },
-    [options, setSelectedTime]
+    [options, setSelectedTime],
   );
 
   const optionsMarkup =
